@@ -9,6 +9,7 @@ import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanima
 import { moveItem } from '@/components/analysis/helpers';
 import { IconButton, TextField } from '@/components/live/common';
 import { GRAPH_LABELS, GraphFrame, MetricTile, PageLayout } from '@/components/live/dashboard';
+import { GRAPH_OPTIONS, GRAPH_POSITIONS, graphOptions, toggleOption } from '@/components/live/graphs';
 import { METRIC_KEYS, METRICS, type TileValue, tileValues } from '@/components/live/metrics';
 import { activateLayout, deleteLayout, editPages, renameLayout, saveLayout } from '@/components/live/layouts';
 import { type Box, computeProgress } from '@/components/live/progress';
@@ -56,6 +57,7 @@ export default function LivePagesScreen() {
   const pages = useSettings((s) => s.settings.livePages);
   const profile = useSettings((s) => s.settings.profile);
   const forceUnit = useSettings((s) => s.settings.forceUnit);
+  const forceDefault = useSettings((s) => s.settings.forceCurveOverlays);
   const update = useSettings((s) => s.update);
   const { width } = useWindowDimensions();
   const [sel, setSel] = useState(0);
@@ -175,6 +177,7 @@ export default function LivePagesScreen() {
               height={ph}
               tiles={sample}
               graphs={page.graphs}
+              position={page.graphPosition}
               renderGraph={(g, w, h) => (
                 <GraphFrame width={w} height={h}>
                   {() => (
@@ -204,7 +207,7 @@ export default function LivePagesScreen() {
         <SectionTitle>Add tiles</SectionTitle>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
           {unused.map((k: MetricKey) => (
-            <Chip key={k} label={`+ ${METRICS[k].label}`} onPress={() => patch({ tiles: [...page.tiles, k] })} />
+            <Chip key={k} label={`+ ${k === "speed" ? "Speed m/s" : k === "speedKmh" ? "Speed km/h" : METRICS[k].label}`} onPress={() => patch({ tiles: [...page.tiles, k] })} />
           ))}
         </View>
         <SectionTitle>{`Graphs (up to 2, ${page.graphs.length} chosen)`}</SectionTitle>
@@ -213,6 +216,34 @@ export default function LivePagesScreen() {
             <Chip key={g} label={GRAPH_LABELS[g]} selected={page.graphs.includes(g)} onPress={() => toggleGraph(g)} />
           ))}
         </View>
+        <SectionTitle>Graph position</SectionTitle>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+          {GRAPH_POSITIONS.map((p) => (
+            <Chip key={p.key} label={p.label} selected={(page.graphPosition ?? 'auto') === p.key} onPress={() => patch({ graphPosition: p.key })} />
+          ))}
+        </View>
+        <Text size="xs" tone="faint">
+          Auto puts graphs on the right in landscape and below the tiles in portrait.
+        </Text>
+        {page.graphs
+          .filter((g) => GRAPH_OPTIONS[g])
+          .map((g) => (
+            <View key={g} style={{ gap: spacing.xs }}>
+              <Text size="sm" weight="700">
+                {GRAPH_LABELS[g]} shows
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                {GRAPH_OPTIONS[g]!.map((o) => (
+                  <Chip
+                    key={o.key}
+                    label={o.label}
+                    selected={graphOptions(page, g, forceDefault).includes(o.key)}
+                    onPress={() => patch({ graphOptions: toggleOption(page, g, o.key, forceDefault) })}
+                  />
+                ))}
+              </View>
+            </View>
+          ))}
       </ScrollView>
     </Screen>
   );

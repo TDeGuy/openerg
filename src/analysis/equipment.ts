@@ -35,8 +35,31 @@ export const DRAG_RANGES: Record<MachineType, { low: number; high: number; name:
   bikeerg: { low: 15, high: 60, name: 'BikeErg' },
 };
 
+/** Machine-specific wording, so the SkiErg and BikeErg advice never talks about boats or catches. */
+const DRAG_WORDS: Record<MachineType, { light: string; heavy: string; strain: string; people: string }> = {
+  rower: {
+    light: 'it feels like a fast, light boat. Fine for high-rate work, but it can encourage short, rushed strokes and needs a very quick catch',
+    heavy: 'it feels like a slow, heavy boat',
+    strain: 'High drag loads the lower back',
+    people: 'most rowers',
+  },
+  skierg: {
+    light: 'each pull feels light and quick. Fine for sprints, but it can encourage short, snatched pulls that skip the hinge',
+    heavy: 'each pull feels heavy and slow',
+    strain: 'High drag loads the shoulders and lower back',
+    people: 'most skiers',
+  },
+  bikeerg: {
+    light: 'it feels like spinning a low gear. Fine for high-cadence work, but it is easy to spin without pushing',
+    heavy: 'it feels like pushing a big gear',
+    strain: 'High drag loads the knees',
+    people: 'most riders',
+  },
+};
+
 export function dragFactorAdvice(dragFactor: number, machine: MachineType): Insight {
   const r = DRAG_RANGES[machine] ?? DRAG_RANGES.rower;
+  const w = DRAG_WORDS[machine] ?? DRAG_WORDS.rower;
   const df = pos(dragFactor);
   if (df <= 0) {
     return {
@@ -50,14 +73,14 @@ export function dragFactorAdvice(dragFactor: number, machine: MachineType): Insi
     return {
       severity: 'info',
       title: `Light drag (${d})`,
-      detail: `Below the typical ${r.low}–${r.high} range: it feels like a fast, light boat. Fine for high-rate work, but it can encourage short, rushed strokes and needs a very quick catch. If it feels too light, raise the damper a notch. Dust in the fan housing also lowers drag, so give it a clean if the reading is low at a normal damper setting.`,
+      detail: `Below the typical ${r.low}–${r.high} range: ${w.light}. If it feels too light, raise the damper a notch. Dust in the fan housing also lowers drag, so give it a clean if the reading is low at a normal damper setting.`,
     };
   }
   if (df > r.high) {
     return {
       severity: 'warn',
       title: `Heavy drag (${d})`,
-      detail: `Above the typical ${r.low}–${r.high} range: it feels like a slow, heavy boat. High drag loads the lower back and tires you faster without making the workout better. Lower the damper; most rowers are fastest and healthiest in the middle of the range.`,
+      detail: `Above the typical ${r.low}–${r.high} range: ${w.heavy}. ${w.strain} and tires you faster without making the workout better. Lower the damper; ${w.people} are fastest and healthiest in the middle of the range.`,
     };
   }
   return {

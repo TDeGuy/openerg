@@ -31,8 +31,10 @@ const inside = (poly, x, y) => {
 
 const A = (-42 * Math.PI) / 180, COS = Math.cos(A), SIN = Math.sin(A);
 /** Colour of the artwork at icon coordinate (x, y), or null where there is none. */
+// SHIFT pulls the drawing down-left so the bowball sits inside launcher masks (it was clipped at the edge).
+const SHIFT = 7;
 function art(x, y, scale, mono) {
-  const sx = 50 + (x - 50) / scale, sy = 50 + (y - 50) / scale;
+  const sx = 50 + (x + SHIFT * scale - 50) / scale, sy = 50 + (y - SHIFT * scale - 50) / scale;
   const dx = sx - 50, dy = sy - 56;
   const lx = 50 + dx * COS - dy * SIN, ly = 56 + dx * SIN + dy * COS;
   if ((lx - ball.x) ** 2 + (ly - ball.y) ** 2 <= ball.r ** 2) return mono ? WHITE : BALL;
@@ -73,8 +75,8 @@ function render(file, size, { scale = 1, bg = 'solid', mono = false, artwork = t
 
 render('icon.png', 1024, {});
 // Adaptive icon: launchers show only the middle ~66 %, so the artwork is drawn smaller.
-render('android-icon-foreground.png', 1024, { scale: 0.62, bg: 'none' });
-render('android-icon-monochrome.png', 1024, { scale: 0.62, bg: 'none', mono: true });
+render('android-icon-foreground.png', 1024, { scale: 0.58, bg: 'none' });
+render('android-icon-monochrome.png', 1024, { scale: 0.58, bg: 'none', mono: true });
 render('android-icon-background.png', 1024, { artwork: false });
 render('splash-icon.png', 512, { bg: 'rounded' });
 render('favicon.png', 48, { bg: 'rounded' });

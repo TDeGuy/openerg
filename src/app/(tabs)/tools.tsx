@@ -355,8 +355,7 @@ function DragGuide() {
       <Field label="Drag factor" value={df} onChangeText={setDf} keyboardType="numeric" placeholder="125" hint="On the PM5: More → Display Drag Factor, then spin the flywheel." />
       {advice ? <InsightList insights={[advice]} /> : null}
       <Text size="xs" tone="dim">
-        Drag factor measures how quickly the flywheel slows, independent of damper number (a dusty or cold flywheel reads lower). Higher drag feels heavier per stroke but is not "more
-        workout" — most rowers do best with a lighter, faster-feeling setting and a long, powerful drive.
+        Drag factor measures how quickly the flywheel slows, independent of damper number (a dusty or cold flywheel reads lower). Higher drag feels heavier but is not "more workout": {machine === 'bikeerg' ? 'most riders do best spinning a moderate setting with strong, even pushes.' : machine === 'skierg' ? 'most skiers do best with a lighter setting and a long, powerful pull.' : 'most rowers do best with a lighter, faster-feeling setting and a long, powerful drive.'}
       </Text>
     </Card>
   );

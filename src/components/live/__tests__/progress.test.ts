@@ -1,3 +1,4 @@
+import type { GraphPosition } from '@/core/types';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_SETTINGS, emptyMetrics } from '@/core/defaults';
@@ -180,5 +181,31 @@ describe('chart helpers', () => {
     const d = smoothPath([{ x: 0, y: 10 }, { x: 5, y: 0 }, { x: 10, y: 10 }], 10);
     expect(d.startsWith('M0,10')).toBe(true);
     expect((d.match(/C/g) ?? []).length).toBe(2);
+  });
+});
+
+describe('layoutPage graph position', () => {
+  const area = (bs: { w: number; h: number }[]) => bs.reduce((a, b) => a + b.w * b.h, 0);
+  it('places graphs left, top, bottom and right of the tiles', () => {
+    const L = (p: GraphPosition) => layoutPage(800, 330, 4, 1, 8, p);
+    expect(L('left').graphs[0].x).toBe(0);
+    expect(L('left').tiles[0].x).toBeGreaterThan(L('left').graphs[0].w);
+    expect(L('top').graphs[0].y).toBe(0);
+    expect(L('top').tiles[0].y).toBeGreaterThan(L('top').graphs[0].h);
+    expect(L('bottom').graphs[0].y).toBeGreaterThan(L('bottom').tiles[0].y);
+    expect(L('right').graphs[0].x).toBeGreaterThan(L('right').tiles[0].x);
+    expect(L('auto')).toEqual(L('right'));
+    expect(layoutPage(390, 700, 4, 1, 8, 'auto')).toEqual(layoutPage(390, 700, 4, 1, 8, 'bottom'));
+  });
+  it('graphs-only / tiles-only drop the other kind, and never leave a page empty', () => {
+    const g = layoutPage(800, 330, 4, 2, 8, 'graphsOnly');
+    expect(g.tiles).toHaveLength(0);
+    expect(g.graphs).toHaveLength(2);
+    expect(area(g.graphs)).toBeGreaterThan(800 * 330 * 0.9);
+    const t = layoutPage(800, 330, 4, 2, 8, 'tilesOnly');
+    expect(t.graphs).toHaveLength(0);
+    expect(t.tiles).toHaveLength(4);
+    expect(layoutPage(800, 330, 4, 0, 8, 'graphsOnly').tiles).toHaveLength(4);
+    expect(layoutPage(800, 330, 0, 1, 8, 'tilesOnly').graphs).toHaveLength(1);
   });
 });

@@ -3,12 +3,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { memo, useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Svg, { Circle, Line, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 import { analyzeForceCurve } from '@/analysis';
 import { emptyMetrics } from '@/core/defaults';
-import type { LiveGraphKey, LiveMetrics, LivePageConfig, MetricKey, StrokeSample } from '@/core/types';
-import { formatDelta, formatDuration, formatPace } from '@/core/units';
+import type { GraphPosition, LiveGraphKey, LiveMetrics, LivePageConfig, MetricKey, StrokeSample } from '@/core/types';
+import { formatDuration, formatPace } from '@/core/units';
 import { useSession } from '@/session';
 import { useSettings } from '@/storage/settings';
 import { Text } from '@/ui/kit';
@@ -18,7 +18,9 @@ import { font, radius, spacing, useTheme } from '@/ui/theme';
 import { ForceCurvePanel } from './ForceCurve';
 import { type MetricValue, type TileValue, tileValues } from './metrics';
 import { PaceBoat } from './overlays';
-import { buildPaceHistory } from './paceHistory';
+import { graphOptions, toggleOption } from './graphs';
+import { PaceHistoryGraph, SeriesGraph, SplitBars } from './PieceGraphs';
+import { editPages } from './layouts';
 import {
   type Box,
   computeProgress,
@@ -46,6 +48,12 @@ export const GRAPH_LABELS: Record<LiveGraphKey, string> = {
   strokeScore: 'Stroke score',
   splits: 'Splits',
   paceBoat: 'Pace boat',
+  wattsHistory: 'Watts over piece',
+  rateHistory: 'Rate over piece',
+  hrHistory: 'Heart rate over piece',
+  splitBars: 'Split bars',
+  ratioTrend: 'Drive : recovery',
+  peakForceTrend: 'Peak force trend',
 };
 
 export function useLiveMetrics(): LiveMetrics {
@@ -94,9 +102,11 @@ export const MetricTile = memo(function MetricTile({ label, value, unit, tone, z
         width,
         height,
         backgroundColor: t.surface,
+        // Dark themes: no border (a tone-tinted hairline read as a stray 1px light edge); the surface colour
+        // separates the tile. Light themes keep a plain border because white-on-near-white tiles vanish.
         borderRadius: radius.md,
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: zone || (tone && tone !== 'default') ? color : t.border,
+        borderWidth: t.dark ? 0 : 1,
+        borderColor: t.border,
         paddingHorizontal: spacing.sm,
         justifyContent: 'center',
         overflow: 'hidden',
@@ -120,6 +130,7 @@ export function PageLayout({
   height,
   tiles,
   graphs,
+  position,
   renderGraph,
   renderTile,
 }: {
@@ -127,19 +138,20 @@ export function PageLayout({
   height: number;
   tiles: TileValue[];
   graphs: LiveGraphKey[];
+  position?: GraphPosition;
   renderGraph: (g: LiveGraphKey, w: number, h: number) => React.ReactNode;
   /** Must position itself at `box` (absolute). */
   renderTile?: (v: TileValue, index: number, box: Box, all: Box[]) => React.ReactNode;
 }) {
-  const L = layoutPage(width, height, tiles.length, graphs.length, GAP);
+  const L = layoutPage(width, height, tiles.length, graphs.length, GAP, position);
   return (
     <View style={{ width, height }}>
-      {graphs.map((g, i) => (
+      {L.graphs.map((_, i) => graphs[i]).map((g, i) => (
         <View key={`${g}${i}`} style={abs(L.graphs[i])}>
           {renderGraph(g, L.graphs[i].w, L.graphs[i].h)}
         </View>
       ))}
-      {tiles.map((v, i) => (
+      {tiles.slice(0, L.tiles.length).map((v, i) => (
         <React.Fragment key={v.id}>
           {renderTile ? (
             renderTile(v, i, L.tiles[i], L.tiles)
@@ -172,13 +184,22 @@ function useTileValues(keys: readonly MetricKey[]): TileValue[] {
 /** Store-connected live page. */
 export function LivePageView({ page, width, height }: { page: LivePageConfig; width: number; height: number }) {
   const tiles = useTileValues(page.tiles);
+  const forceDefault = useSettings((s) => s.settings.forceCurveOverlays);
+  // Chips on the force curve toggle that graph's own overlays on this page.
+  const toggle = (g: LiveGraphKey, key: string) => {
+    const st = useSettings.getState();
+    const { livePages, savedLayouts, activeLayoutId, forceCurveOverlays } = st.settings;
+    const next = livePages.map((p) => (p.id === page.id ? { ...p, graphOptions: toggleOption(p, g, key, forceCurveOverlays) } : p));
+    st.update(editPages({ livePages, savedLayouts, activeLayoutId }, next));
+  };
   return (
     <PageLayout
       width={width}
       height={height}
       tiles={tiles}
       graphs={page.graphs.slice(0, 2)}
-      renderGraph={(g, w, h) => <LiveGraph kind={g} width={w} height={h} />}
+      position={page.graphPosition}
+      renderGraph={(g, w, h) => <LiveGraph kind={g} width={w} height={h} options={graphOptions(page, g, forceDefault)} onToggle={(k) => toggle(g, k)} />}
     />
   );
 }
@@ -197,21 +218,29 @@ export function GraphFrame({ width, height, children }: { width: number; height:
   );
 }
 
-export function LiveGraph({ kind, width, height }: { kind: LiveGraphKey; width: number; height: number }) {
+export function LiveGraph({ kind, width, height, options, onToggle }: { kind: LiveGraphKey; width: number; height: number; options: string[]; onToggle?: (key: string) => void }) {
   return (
     <GraphFrame width={width} height={height}>
       {(w, h) => {
         switch (kind) {
           case 'forceCurve':
-            return <ForceCurvePanel width={w} height={h} />;
+            return <ForceCurvePanel width={w} height={h} enabled={options} onToggle={onToggle} />;
           case 'splits':
             return <SplitsTable height={h} />;
           case 'paceBoat':
             return <PaceBoat width={w} height={h} />;
           case 'paceHistory':
-            return <PaceHistoryGraph width={w} height={h} />;
+            return <PaceHistoryGraph width={w} height={h} options={options} />;
+          case 'splitBars':
+            return <SplitBars width={w} height={h} />;
+          case 'wattsHistory':
+          case 'rateHistory':
+          case 'hrHistory':
+          case 'ratioTrend':
+          case 'peakForceTrend':
+            return <SeriesGraph kind={kind} width={w} height={h} options={options} />;
           default:
-            return <StrokeGraph kind={kind} width={w} height={h} />;
+            return <StrokeGraph kind={kind} width={w} height={h} options={options} />;
         }
       }}
     </GraphFrame>
@@ -247,7 +276,7 @@ interface Series {
 const int = (v: number) => (v > 0 ? String(Math.round(v)) : '–');
 
 /** Rolling graph of the last 60 strokes. */
-const StrokeGraph = memo(function StrokeGraph({ kind, width, height }: { kind: Exclude<LiveGraphKey, 'forceCurve' | 'splits' | 'paceBoat' | 'paceHistory'>; width: number; height: number }) {
+const StrokeGraph = memo(function StrokeGraph({ kind, width, height, options }: { kind: 'paceRate' | 'watts' | 'heartRate' | 'strokeScore'; width: number; height: number; options: string[] }) {
   const t = useTheme();
   const strokes = useSession((s) => s.strokes);
   const heightCm = useSettings((s) => s.settings.profile.heightCm);
@@ -257,9 +286,9 @@ const StrokeGraph = memo(function StrokeGraph({ kind, width, height }: { kind: E
     switch (kind) {
       case 'paceRate':
         return [
-          { label: 'Pace', color: t.pace, values: win.map((s) => s.paceMsPer500), invert: true, format: (v) => formatPace(v, machine) },
+          { label: 'Pace', color: t.pace, values: win.map((s) => s.paceMsPer500), invert: true, format: (v: number) => formatPace(v, machine) },
           { label: 'Rate', color: t.rate, values: win.map((s) => s.strokeRate), format: int },
-        ];
+        ].filter((x) => options.includes(x.label.toLowerCase()));
       case 'watts':
         return [{ label: 'Watts', color: t.watts, values: win.map((s) => s.watts), format: int }];
       case 'heartRate':
@@ -287,73 +316,6 @@ const StrokeGraph = memo(function StrokeGraph({ kind, width, height }: { kind: E
         <Svg width={width} height={chartH}>
           {paths.map((d, i) => (d ? <Path key={i} d={d} stroke={series[i].color} strokeWidth={i === 0 ? 2.5 : 2} fill="none" /> : null))}
         </Svg>
-      ) : (
-        <Text size="sm" tone="faint">
-          Builds up as you row.
-        </Text>
-      )}
-    </View>
-  );
-});
-
-/** Split over the whole piece (faster = higher) with the plan / pace-boat target line. */
-const PaceHistoryGraph = memo(function PaceHistoryGraph({ width, height }: { width: number; height: number }) {
-  const t = useTheme();
-  const strokes = useSession((s) => s.strokes);
-  const plan = useSession((s) => s.plan);
-  const boatPace = useSession((s) => s.paceBoat?.targetPaceMsPer500 ?? null);
-  const machine = useSession((s) => s.connection.device?.machineType);
-  const m = useLiveMetrics();
-  const progress = useLiveProgress();
-  const intervalPace = currentTarget(plan, m, progress).paceMsPer500;
-  const flat = intervalPace ?? (boatPace && boatPace > 0 ? boatPace : null);
-  const h = useMemo(() => buildPaceHistory({ strokes, plan, flatTargetMsPer500: flat }), [strokes, plan, flat]);
-  const AX = 44;
-  const headH = 20;
-  const cw = Math.max(0, width - AX);
-  const ch = Math.max(0, height - headH);
-  const px = (x: number) => (x / h.xMax) * cw;
-  const py = (v: number) => ((v - h.yMin) / (h.yMax - h.yMin)) * ch;
-  const { dMain, dTarget } = useMemo(() => {
-    const line = (pts: [number, number][]) =>
-      pts.length > 1 ? pts.map(([x, v], i) => `${i ? 'L' : 'M'}${((x / h.xMax) * cw).toFixed(1)},${(((v - h.yMin) / (h.yMax - h.yMin)) * ch).toFixed(1)}`).join('') : '';
-    return { dMain: line(h.points), dTarget: line(h.target) };
-  }, [h, cw, ch]);
-  const gap = h.current && h.targetNow ? h.current[1] - h.targetNow : null;
-  const ticks = [h.yMin + (h.yMax - h.yMin) * 0.1, (h.yMin + h.yMax) / 2, h.yMax - (h.yMax - h.yMin) * 0.1];
-  return (
-    <View style={{ width, height }} accessibilityLabel={`Split over the piece${gap !== null ? `, ${formatDelta(gap)} versus target` : ''}`}>
-      <View style={{ height: headH, flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-        <Text size="xs" weight="700" style={{ color: t.pace }}>
-          SPLIT {formatPace(h.current?.[1] ?? 0, machine)}
-        </Text>
-        {gap !== null ? (
-          <Text size="xs" weight="700" tone={gap <= 500 ? 'good' : gap <= 2000 ? 'warn' : 'bad'}>
-            {formatDelta(gap)} vs target
-          </Text>
-        ) : null}
-        <Text size="xs" tone="faint" style={{ marginLeft: 'auto' }}>
-          {h.xUnit === 'distance' ? `${Math.round(h.xMax)} m` : formatDuration(h.xMax, { tenths: false })}
-        </Text>
-      </View>
-      {dMain ? (
-        <View style={{ height: ch, flexDirection: 'row' }}>
-          <View style={{ width: AX }}>
-            {ticks.map((v, i) => (
-              <Text key={i} size="xs" tone="faint" style={[font.metric, { position: 'absolute', right: 4, top: Math.min(ch - 14, Math.max(0, py(v) - 7)) }]}>
-                {formatPace(v, machine)}
-              </Text>
-            ))}
-          </View>
-          <Svg width={cw} height={ch}>
-            {ticks.map((v, i) => (
-              <Line key={i} x1={0} x2={cw} y1={py(v)} y2={py(v)} stroke={t.border} strokeWidth={StyleSheet.hairlineWidth} />
-            ))}
-            {dTarget ? <Path d={dTarget} stroke={t.textFaint} strokeWidth={2} strokeDasharray="6,4" fill="none" /> : null}
-            <Path d={dMain} stroke={t.pace} strokeWidth={2.5} fill="none" />
-            {h.current ? <Circle cx={Math.min(cw - 4, px(h.current[0]))} cy={py(h.current[1])} r={4.5} fill={t.pace} stroke={t.surface} strokeWidth={1.5} /> : null}
-          </Svg>
-        </View>
       ) : (
         <Text size="sm" tone="faint">
           Builds up as you row.

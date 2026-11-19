@@ -147,7 +147,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
   elapsed: { label: 'Time', description: 'Time rowed; counts down when the piece has a time target.', compute: time },
   distance: { label: 'Distance', description: 'Distance rowed; counts down when the piece has a distance target.', compute: distance },
-  remaining: { label: 'Remaining', description: 'Distance, time or calories left; elapsed time when just rowing.', compute: remaining },
+  remaining: { label: 'Piece', description: 'Shows whatever the workout is set by: distance on distance pieces, time on time pieces (counting down); time when just rowing.', compute: remaining },
   calories: { label: 'Calories', description: 'Calories burned; counts down when the piece has a calorie target.', compute: calories },
   calPerHour: { label: 'Cal/hr', description: 'Calorie burn rate.', compute: (c) => ({ value: thousands(c.m.caloriesPerHour), unit: 'cal/h' }) },
   dragFactor: { label: 'Drag', description: 'Drag factor of the flywheel.', compute: (c) => ({ value: int(c.m.dragFactor) }) },
@@ -169,7 +169,8 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   avgForce: { label: 'Avg force', description: 'Average handle force of the last drive.', compute: (c) => force(c, c.m.avgForceN) },
   workPerStroke: { label: 'Work', description: 'Work per stroke.', compute: (c) => ({ value: int(c.m.workPerStrokeJ), unit: 'J' }) },
   strokeCount: { label: 'Strokes', description: 'Stroke count.', compute: (c) => ({ value: String(Math.max(0, Math.round(c.m.strokeCount))) }) },
-  speed: { label: 'Speed', description: 'Boat speed.', compute: (c) => ({ value: fixed(c.m.speedMps, 2), unit: 'm/s' }) },
+  speed: { label: 'Speed', description: 'Speed in metres per second.', compute: (c) => ({ value: fixed(c.m.speedMps, 2), unit: 'm/s' }) },
+  speedKmh: { label: 'Speed', description: 'Speed in kilometres per hour.', compute: (c) => ({ value: fixed(c.m.speedMps * 3.6, 1), unit: 'km/h' }) },
   projectedFinish: { label: 'Proj. finish', description: 'Projected finish time at your current average.', compute: projectedFinish },
   projectedDistance: { label: 'Proj. distance', description: 'Projected distance at your current average.', compute: projectedDistance },
   wattsPerKg: {
@@ -198,8 +199,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   },
 };
 
-/** Tiles offered in the editor. 'remaining' is legacy: Distance, Time and Calories now count down themselves. */
-export const METRIC_KEYS = (Object.keys(METRICS) as MetricKey[]).filter((k) => k !== 'remaining');
+export const METRIC_KEYS = Object.keys(METRICS) as MetricKey[];
 
 export type TileValue = MetricValue & { id: MetricKey; label: string };
 

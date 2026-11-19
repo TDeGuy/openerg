@@ -2,7 +2,7 @@
   "expo": {
     "name": "OpenErg",
     "slug": "openerg",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "openerg",
@@ -35,7 +35,8 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.BLUETOOTH",
         "android.permission.BLUETOOTH_ADMIN"
-      ]
+      ],
+      "versionCode": 3
     },
     "web": {
       "output": "single",

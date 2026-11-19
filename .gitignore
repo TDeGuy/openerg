@@ -49,3 +49,9 @@ example
 # Build outputs
 *.apk
 *.aab
+
+# Local Android builds: generated project and signing secrets (never commit)
+/android/
+credentials.json
+credentials/
+/dist/

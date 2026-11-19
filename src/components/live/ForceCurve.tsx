@@ -133,15 +133,13 @@ function OverlayChip({ label, color, dash, on, onPress }: { label: string; color
 }
 
 /** Store-connected panel sized to its box: score, shape / first flag, overlay chips, chart. */
-export const ForceCurvePanel = memo(function ForceCurvePanel({ width, height }: { width: number; height: number }) {
+export const ForceCurvePanel = memo(function ForceCurvePanel({ width, height, enabled, onToggle }: { width: number; height: number; enabled: string[]; onToggle?: (key: string) => void }) {
   const t = useTheme();
   const stroke = useSession((s) => s.lastStroke);
   const prev = useSession((s) => (s.strokes.length >= 2 ? s.strokes[s.strokes.length - 2] : null));
   const avg = useSession((s) => s.rollingAverageCurve);
   const analysis = useSession((s) => s.lastStrokeAnalysis);
-  const enabled = useSettings((s) => s.settings.forceCurveOverlays);
   const unit = useSettings((s) => s.settings.forceUnit);
-  const update = useSettings((s) => s.update);
 
   const curve = stroke?.forceCurve ?? [];
   const overlays = useMemo(() => {
@@ -158,9 +156,6 @@ export const ForceCurvePanel = memo(function ForceCurvePanel({ width, height }: 
       .filter((o) => o.curve.length > 1);
   }, [enabled, prev, avg, stroke, curve, t]);
 
-  const toggle = (k: ForceOverlay) =>
-    update({ forceCurveOverlays: enabled.includes(k) ? enabled.filter((x) => x !== k) : [...enabled, k] });
-
   const valid = analysis?.valid ?? false;
   const scoreTone = !valid ? 'faint' : analysis!.score >= 80 ? 'good' : analysis!.score >= 60 ? 'warn' : 'bad';
   const flag = valid && analysis!.flags.length ? describeFlag(analysis!.flags[0]).title : null;
@@ -176,7 +171,7 @@ export const ForceCurvePanel = memo(function ForceCurvePanel({ width, height }: 
           {flag ?? (valid ? describeShape(analysis!.shape).title : curve.length ? 'Analysing…' : 'Force curve')}
         </Text>
         {OVERLAYS.map((o) => (
-          <OverlayChip key={o.key} label={o.label} color={o.color(t)} dash={o.dash} on={enabled.includes(o.key)} onPress={() => toggle(o.key)} />
+          <OverlayChip key={o.key} label={o.label} color={o.color(t)} dash={o.dash} on={enabled.includes(o.key)} onPress={() => onToggle?.(o.key)} />
         ))}
         <Text size="xs" tone="faint">
           {unit}

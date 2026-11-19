@@ -4,6 +4,7 @@
  * No React Native imports — unit tested in __tests__/progress.test.ts.
  */
 import type {
+  GraphPosition,
   IntervalDef,
   LiveMetrics,
   PacePlan,
@@ -134,26 +135,44 @@ export interface Box {
 }
 
 /**
- * Splits a live page (w×h) into graph boxes and tile boxes so nothing overflows:
- * graphs take a column (landscape) or a band (portrait), tiles share the rest with the
- * first two tiles in a taller hero row.
+ * Splits a live page (w×h) into graph boxes and tile boxes so nothing overflows. `position` says where the
+ * graphs sit; 'auto' = a column on the right in landscape, a band below in portrait. Tiles share the rest
+ * with the first two in a taller hero row. 'graphsOnly' drops the tiles and 'tilesOnly' the graphs
+ * (each falls back to the other when its own list is empty, so a page is never blank).
  */
-export function layoutPage(w: number, h: number, nTiles: number, nGraphs: number, gap: number): { tiles: Box[]; graphs: Box[] } {
+export function layoutPage(w: number, h: number, nTiles: number, nGraphs: number, gap: number, position: GraphPosition = 'auto'): { tiles: Box[]; graphs: Box[] } {
+  if (position === 'graphsOnly' && nGraphs > 0) nTiles = 0;
+  if (position === 'tilesOnly' && nTiles > 0) nGraphs = 0;
   const graphs: Box[] = [];
   let area: Box = { x: 0, y: 0, w, h };
   if (nGraphs > 0) {
     let band = area;
-    if (nTiles > 0 && w >= h) {
+    const side = position === 'auto' ? (w >= h ? 'right' : 'bottom') : position;
+    if (nTiles > 0) {
       const gw = Math.round((w - gap) * 0.5);
-      band = { x: w - gw, y: 0, w: gw, h };
-      area = { x: 0, y: 0, w: w - gw - gap, h };
-    } else if (nTiles > 0) {
       const gh = Math.round((h - gap) * 0.45);
-      band = { x: 0, y: h - gh, w, h: gh };
-      area = { x: 0, y: 0, w, h: h - gh - gap };
+      if (side === 'left') {
+        band = { x: 0, y: 0, w: gw, h };
+        area = { x: gw + gap, y: 0, w: w - gw - gap, h };
+      } else if (side === 'top') {
+        band = { x: 0, y: 0, w, h: gh };
+        area = { x: 0, y: gh + gap, w, h: h - gh - gap };
+      } else if (side === 'bottom') {
+        band = { x: 0, y: h - gh, w, h: gh };
+        area = { x: 0, y: 0, w, h: h - gh - gap };
+      } else {
+        band = { x: w - gw, y: 0, w: gw, h };
+        area = { x: 0, y: 0, w: w - gw - gap, h };
+      }
     }
-    const gh = (band.h - gap * (nGraphs - 1)) / nGraphs;
-    for (let i = 0; i < nGraphs; i++) graphs.push({ x: band.x, y: band.y + i * (gh + gap), w: band.w, h: gh });
+    // Wide bands (top / bottom / graphs only on a landscape page) put graphs side by side.
+    if (band.w >= band.h * 1.8 && nGraphs > 1) {
+      const gw = (band.w - gap * (nGraphs - 1)) / nGraphs;
+      for (let i = 0; i < nGraphs; i++) graphs.push({ x: band.x + i * (gw + gap), y: band.y, w: gw, h: band.h });
+    } else {
+      const gh = (band.h - gap * (nGraphs - 1)) / nGraphs;
+      for (let i = 0; i < nGraphs; i++) graphs.push({ x: band.x, y: band.y + i * (gh + gap), w: band.w, h: gh });
+    }
   }
   return { tiles: tileBoxes(area, nTiles, gap), graphs };
 }

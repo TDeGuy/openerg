@@ -513,6 +513,7 @@ export type MetricKey =
   | 'workPerStroke'
   | 'strokeCount'
   | 'speed'
+  | 'speedKmh'
   | 'projectedFinish'
   | 'projectedDistance'
   | 'wattsPerKg'
@@ -559,7 +560,16 @@ export type LiveGraphKey =
   | 'heartRate'
   | 'strokeScore'
   | 'splits'        // completed splits table
-  | 'paceBoat';
+  | 'paceBoat'
+  | 'wattsHistory'  // watts over the whole piece
+  | 'rateHistory'   // stroke rate over the whole piece
+  | 'hrHistory'     // heart rate over the whole piece, optional zone bands
+  | 'splitBars'     // one bar per completed split
+  | 'ratioTrend'    // recovery : drive ratio per stroke
+  | 'peakForceTrend';
+
+/** Where a page's graphs sit relative to its tiles; 'auto' = right in landscape, below in portrait. */
+export type GraphPosition = 'auto' | 'right' | 'left' | 'top' | 'bottom' | 'graphsOnly' | 'tilesOnly';
 
 /**
  * One page of the live rowing screen. Everything on a page must fit the screen
@@ -578,6 +588,10 @@ export interface LivePageConfig {
   tiles: MetricKey[];
   /** 0-2 graphs shown beside (landscape) or below (portrait) the tiles. */
   graphs: LiveGraphKey[];
+  /** Missing = 'auto'. */
+  graphPosition?: GraphPosition;
+  /** Enabled lines / overlays per graph (see components/live/graphs.ts); missing = that graph's defaults. */
+  graphOptions?: Partial<Record<LiveGraphKey, string[]>>;
 }
 
 /* ───────────────────────── Coxswain ───────────────────────── */
