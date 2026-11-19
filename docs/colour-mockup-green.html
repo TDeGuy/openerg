@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenErg colour test</title>
+<style>
+  :root {
+    --bg:#0A0C0B; --surface:#141816; --surface2:#1E2421; --border:#2A332E;
+    --text:#F2F5F3; --dim:#B4BDB7; --faint:#77837B;
+    --blue:#3DDC84; --brown:#1F9D55; --tan:#B7F5CF; --good:#3DDC84;
+  }
+  * { box-sizing:border-box; margin:0; }
+  body { background:#000000; color:var(--text); font-family:system-ui,Segoe UI,Roboto,sans-serif; padding:16px; }
+  h2 { font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin:18px 0 8px; }
+  .wrap { max-width:900px; margin:0 auto; }
+  .phone { background:var(--bg); border:1px solid var(--border); border-radius:22px; padding:12px; }
+  .land { aspect-ratio: 19.5/9; display:grid; grid-template-columns: 1.15fr 1fr; grid-template-rows:auto 1fr; gap:10px; }
+  .strip { grid-column:1/-1; display:flex; justify-content:space-between; align-items:center; font-size:13px; color:var(--dim); }
+  .pill { border:1px solid var(--brown); color:var(--tan); border-radius:999px; padding:3px 10px; font-weight:600; }
+  .end { background:var(--surface2); color:var(--text); border-radius:999px; padding:4px 14px; font-weight:700; }
+  .tiles { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1.5fr 1fr 1fr; gap:10px; min-height:0; }
+  .tile { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:8px 12px; display:flex; flex-direction:column; justify-content:center; min-height:0; }
+  .lab { font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); }
+  .val { font-weight:800; font-variant-numeric:tabular-nums; line-height:1; font-size:clamp(18px,4.2vw,40px); }
+  .big .val { font-size:clamp(28px,7.5vw,70px); }
+  .u { font-size:11px; color:var(--dim); font-weight:500; margin-left:3px; }
+  .blue { color:var(--blue); } .tan { color:var(--tan); }
+  .graph { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:10px 12px; display:flex; flex-direction:column; min-height:0; }
+  .graph svg { flex:1; width:100%; min-height:0; }
+  .legend { display:flex; gap:12px; font-size:11px; color:var(--dim); flex-wrap:wrap; }
+  .legend i { display:inline-block; width:14px; height:3px; border-radius:2px; vertical-align:middle; margin-right:4px; }
+  .cox { position:absolute; left:50%; transform:translateX(-50%); bottom:14px; background:var(--brown); color:#FFFFFF; font-weight:700; font-size:13px; padding:6px 14px; border-radius:999px; white-space:nowrap; }
+  .rel { position:relative; }
+  .home { max-width:330px; display:flex; flex-direction:column; gap:10px; }
+  .hero { background:var(--blue); color:#04210F; border-radius:16px; padding:18px; font-weight:800; font-size:22px; text-align:center; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 8px; text-align:center; font-weight:700; }
+  .week { background:var(--surface); border-left:4px solid var(--brown); border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; font-size:13px; color:var(--dim); }
+  .week b { display:block; color:var(--text); font-size:18px; }
+  .row { display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; }
+  .sw { display:flex; gap:8px; flex-wrap:wrap; } .sw div { width:74px; height:52px; border-radius:10px; font-size:10px; display:flex; align-items:flex-end; padding:5px; color:#0008; font-weight:700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2>Rowing screen (landscape, nothing scrolls)</h2>
+  <div class="phone land rel">
+    <div class="strip"><span><b style="color:var(--text)">2000m</b> · Row</span><span class="pill">Cox on</span><span class="end">End</span></div>
+    <div class="tiles">
+      <div class="tile big"><span class="lab">Split /500m</span><span class="val blue">1:47.2</span></div>
+      <div class="tile big"><span class="lab">Rate</span><span class="val">28<span class="u">spm</span></span></div>
+      <div class="tile"><span class="lab">Distance left</span><span class="val tan">1,264<span class="u">m</span></span></div>
+      <div class="tile"><span class="lab">Watts</span><span class="val">284</span></div>
+      <div class="tile"><span class="lab">Heart rate</span><span class="val">164<span class="u">bpm</span></span></div>
+      <div class="tile"><span class="lab">Avg split</span><span class="val">1:46.8</span></div>
+    </div>
+    <div class="graph">
+      <div class="legend"><span><i style="background:var(--blue)"></i>This stroke</span><span><i style="background:var(--tan)"></i>Ideal</span><span><i style="background:var(--faint)"></i>Previous</span><span style="margin-left:auto;color:var(--good);font-weight:700">Score 86</span></div>
+      <svg viewBox="0 0 300 150" preserveAspectRatio="none">
+        <path d="M0,150 C40,40 90,10 125,14 C180,20 240,90 300,150 Z" fill="none" stroke="#B7F5CF" stroke-width="2" stroke-dasharray="5 4"/>
+        <path d="M0,150 C45,70 85,30 130,26 C185,28 235,100 300,150" fill="none" stroke="#77837B" stroke-width="2"/>
+        <path d="M0,150 C35,55 80,18 120,20 C175,24 238,95 300,150 Z" fill="#3DDC8433" stroke="#3DDC84" stroke-width="3"/>
+        <circle cx="120" cy="20" r="4" fill="#3DDC84"/>
+      </svg>
+    </div>
+    <div class="cox">“Quick catch — lock on and push”</div>
+  </div>
+
+  <h2>Home screen (portrait) and palette</h2>
+  <div class="row">
+    <div class="phone home">
+      <div class="strip"><span class="pill">● PM5 430123456</span><span>HR strap ✓</span></div>
+      <div class="hero">Just Row</div>
+      <div class="grid3"><div class="card">2k</div><div class="card">5k</div><div class="card">6k</div><div class="card">10k</div><div class="card">30:00</div><div class="card">500m</div></div>
+      <div class="week"><span><b>24,500 m</b>this week</span><span><b>4</b>sessions</span><span><b>1:52</b>hours</span></div>
+      <div class="card" style="text-align:left;color:var(--dim);font-weight:500"><b style="color:var(--text)">Last: 5000m</b> · 19:12.4 · 1:55.2 /500m</div>
+    </div>
+    <div class="sw">
+      <div style="background:#0A0C0B;color:#fff8">Black bg</div><div style="background:#141816;color:#fff8">Surface</div><div style="background:#3DDC84">Green</div><div style="background:#1F9D55">Deep green</div><div style="background:#B7F5CF">Mint</div><div style="background:#F2F5F3">White text</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

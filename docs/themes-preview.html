@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenErg themes</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #05070A; color: #E8ECF1; font-family: system-ui, Segoe UI, Roboto, sans-serif; padding: 16px; }
+  .wrap { max-width: 920px; margin: 0 auto; display: grid; gap: 26px; }
+  h1 { font-size: 18px; } p.note { color: #9AA6B5; font-size: 13px; margin-top: 4px; }
+  h2 { font-size: 15px; margin-bottom: 2px; } h2 small { font-weight: 500; color: #9AA6B5; margin-left: 8px; }
+  .row { display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr); gap: 12px; align-items: start; margin-top: 8px; }
+  @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+  .phone { border-radius: 18px; padding: 10px; border: 1px solid; }
+  .land { aspect-ratio: 19.5/9; display: grid; grid-template-columns: 1.15fr 1fr; grid-template-rows: auto 1fr; gap: 8px; position: relative; }
+  .strip { grid-column: 1/-1; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+  .end { border-radius: 999px; padding: 3px 12px; font-weight: 700; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1.5fr 1fr 1fr; gap: 8px; min-height: 0; }
+  .tile, .graph, .card { border: 1px solid; border-radius: 12px; }
+  .tile { padding: 6px 10px; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .lab { font-size: 9px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+  .val { font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; font-size: clamp(15px, 3.4vw, 32px); }
+  .big .val { font-size: clamp(22px, 5.6vw, 54px); }
+  .u { font-size: 10px; font-weight: 500; margin-left: 3px; }
+  .graph { padding: 8px 10px; display: flex; flex-direction: column; min-height: 0; }
+  .graph svg { flex: 1; width: 100%; min-height: 0; }
+  .legend { display: flex; gap: 10px; font-size: 10px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 3px; }
+  .cox { position: absolute; left: 50%; transform: translateX(-50%); bottom: 10px; font-weight: 700; font-size: 12px; padding: 5px 12px; border-radius: 999px; white-space: nowrap; }
+  .home { display: flex; flex-direction: column; gap: 8px; }
+  .hero { border-radius: 14px; padding: 14px; font-weight: 800; font-size: 18px; text-align: center; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .card { padding: 10px 6px; text-align: center; font-weight: 700; font-size: 13px; }
+  .zones { display: flex; gap: 4px; } .zones span { flex: 1; height: 8px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div><h1>OpenErg themes</h1><p class="note">Seven themes, all selectable in Settings. Glacier Pulse is the default. Flat colours only: no glows.</p></div>
+  <div id="out"></div>
+</div>
+<script>
+const T = [
+ ['Glacier Pulse','default · indigo-black, ice blue, violet',{bg:'#090D16',surface:'#161F33',alt:'#1E293B',border:'#1B3853',text:'#F8FAFC',dim:'#94A3B8',faint:'#7C8BA1',accent:'#38BDF8',accentText:'#090D16',good:'#2DD4BF',force:'#38BDF8',forceAlt:'#8B5CF6',heart:'#F43F5E',zones:['#64748B','#2DD4BF','#38BDF8','#FBBF24','#F43F5E']}],
+ ['Ember','ink, amber numbers, blue support',{bg:'#0F1115',surface:'#181B21',alt:'#232831',border:'#2F3642',text:'#F5F6F8',dim:'#B6BCC8',faint:'#7F8796',accent:'#FFB224',accentText:'#2A1A00',good:'#5FD68B',force:'#FFB224',forceAlt:'#5B8DEF',heart:'#F26D6D',zones:['#7A8291','#5FD68B','#9CC2FF','#FFB224','#F26D6D']}],
+ ['Regatta','black and green',{bg:'#0A0C0B',surface:'#141816',alt:'#1E2421',border:'#2A332E',text:'#F2F5F3',dim:'#B4BDB7',faint:'#7F8B83',accent:'#3DDC84',accentText:'#04210F',good:'#3DDC84',force:'#3DDC84',forceAlt:'#B7F5CF',heart:'#F26D6D',zones:['#7F8B83','#3DDC84','#8FD3FF','#F5C542','#F26D6D']}],
+ ['Boathouse','navy, blue, warm tan',{bg:'#0D1826',surface:'#15263A',alt:'#1D3350',border:'#2B4566',text:'#F4ECDF',dim:'#B9C4D2',faint:'#8496AC',accent:'#4FA6FF',accentText:'#06203B',good:'#6FD39A',force:'#4FA6FF',forceAlt:'#E3BC8C',heart:'#F2767A',zones:['#8496AC','#6FD39A','#4FA6FF','#F0B45A','#F2767A']}],
+ ['Tide','the original dark teal',{bg:'#0B0F14',surface:'#151B23',alt:'#1E2630',border:'#2A3441',text:'#F2F5F8',dim:'#A7B3C2',faint:'#6B7888',accent:'#2DD4BF',accentText:'#04211D',good:'#4ADE80',force:'#38BDF8',forceAlt:'#64748B',heart:'#F87171',zones:['#60A5FA','#34D399','#FBBF24','#FB923C','#F87171']}],
+ ['Chalk','warm light theme for bright rooms',{bg:'#F6F3EE',surface:'#FFFFFF',alt:'#ECE7DF',border:'#D9D2C7',text:'#1B1F24',dim:'#4F5863',faint:'#6B7480',accent:'#1F5FBF',accentText:'#FFFFFF',good:'#1A8F5A',force:'#1F5FBF',forceAlt:'#8A94A3',heart:'#C8323C',zones:['#6B7480','#1A8F5A','#1F5FBF','#B45309','#C8323C']}],
+ ['Daylight','the original light teal',{bg:'#F4F6F8',surface:'#FFFFFF',alt:'#EBEEF2',border:'#D5DBE3',text:'#0F1720',dim:'#4A5665',faint:'#6F7B89',accent:'#0A7A70',accentText:'#FFFFFF',good:'#16A34A',force:'#0284C7',forceAlt:'#94A3B8',heart:'#DC2626',zones:['#2563EB','#059669','#A16207','#EA580C','#DC2626']}],
+];
+const tile = (p, lab, val, u, big) => `<div class="tile${big ? ' big' : ''}" style="background:${p.surface};border-color:${p.border}"><span class="lab" style="color:${p.faint}">${lab}</span><span class="val" style="color:${p.text}">${val}${u ? `<span class="u" style="color:${p.dim}">${u}</span>` : ''}</span></div>`;
+document.getElementById('out').innerHTML = T.map(([name, sub, p]) => `
+<section style="margin-bottom:26px">
+  <h2>${name}<small>${sub}</small></h2>
+  <div class="row">
+    <div class="phone land" style="background:${p.bg};border-color:${p.border}">
+      <div class="strip" style="color:${p.dim}"><span><b style="color:${p.text}">2000m</b> · Rowing</span><span class="end" style="background:${p.alt};color:${p.text}">End</span></div>
+      <div class="tiles">
+        ${tile(p,'Split /500m','1:47.2','',1)}${tile(p,'Rate','28','spm',1)}
+        ${tile(p,'Distance left','1,264','m')}${tile(p,'Watts','284','')}
+        ${tile(p,'Heart rate',`<span style="color:${p.heart}">164</span>`,'bpm')}${tile(p,'Avg split','1:46.8','')}
+      </div>
+      <div class="graph" style="background:${p.surface};border-color:${p.border}">
+        <div class="legend" style="color:${p.dim}"><span><i style="background:${p.force}"></i>This stroke</span><span><i style="background:${p.forceAlt}"></i>Ideal</span><span style="margin-left:auto;color:${p.good};font-weight:700">Score 86</span></div>
+        <svg viewBox="0 0 300 150" preserveAspectRatio="none">
+          <path d="M0,150 C40,40 90,10 125,14 C180,20 240,90 300,150" fill="none" stroke="${p.forceAlt}" stroke-width="2" stroke-dasharray="5 4"/>
+          <path d="M0,150 C35,55 80,18 120,20 C175,24 238,95 300,150 Z" fill="${p.force}33" stroke="${p.force}" stroke-width="3"/>
+        </svg>
+      </div>
+      <div class="cox" style="background:${p.alt};color:${p.text};border:1px solid ${p.border}">“Quick catch. Lock on and push.”</div>
+    </div>
+    <div class="phone home" style="background:${p.bg};border-color:${p.border}">
+      <div class="hero" style="background:${p.accent};color:${p.accentText}">Just Row</div>
+      <div class="grid3">${['2k','5k','6k','10k','30:00','500m'].map(x => `<div class="card" style="background:${p.surface};border-color:${p.border};color:${p.text}">${x}</div>`).join('')}</div>
+      <div class="card" style="background:${p.surface};border-color:${p.border};color:${p.dim};text-align:left;font-weight:500"><b style="color:${p.text}">Last: 5000m</b> · 19:12.4 · <span style="color:${p.accent}">1:55.2</span></div>
+      <div class="zones">${p.zones.map(z => `<span style="background:${z}"></span>`).join('')}</div>
+    </div>
+  </div>
+</section>`).join('');
+</script>
+</body>
+</html>
