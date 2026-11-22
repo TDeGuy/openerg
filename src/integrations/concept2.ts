@@ -3,7 +3,8 @@ import type { AthleteProfile, PmWorkoutType, SplitSummary, WorkoutRecord } from 
 import { formBody, postForm, type Tokens } from './oauth';
 
 export type C2Env = 'dev' | 'production';
-export const C2_REDIRECT = 'openerg://oauth/concept2';
+// Three slashes: Concept2 returns the registered callback this way, and the sign-in window only closes on an exact match.
+export const C2_REDIRECT = 'openerg:///oauth/concept2';
 const SCOPE = 'results:write';
 const HOST: Record<C2Env, string> = { production: 'https://log.concept2.com', dev: 'https://log-dev.concept2.com' };
 

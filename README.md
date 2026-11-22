@@ -99,7 +99,7 @@ and Health Connect sync.
 Each service needs an API application you register yourself; no keys ship with the app. Open Settings > Connected services, type the client ID and secret, tap Connect. Credentials and tokens stay in app-private storage on the phone and are not part of backups.
 
 - Strava: create an app at strava.com/settings/api and set Authorization Callback Domain to `oauth` (the app redirects to `openerg://oauth/strava`). Scope: `activity:write`.
-- Concept2: register an app in the developer portal at log.concept2.com/developers and register the redirect URI `openerg://oauth/concept2`. New apps work on the dev server (log-dev.concept2.com, separate data) until Concept2 approves production; switch Development/Production in the app.
+- Concept2: register an app in the developer portal at log.concept2.com/developers and register the redirect URI `openerg:///oauth/concept2` (three slashes). New apps work on the dev server (log-dev.concept2.com, separate data) until Concept2 approves production; switch Development/Production in the app.
 
 Per service choose Ask each time (default), Always upload or Never. Saved workouts also have an Upload card on the detail screen, with status and Retry. A workout is never uploaded twice to the same service.
 
