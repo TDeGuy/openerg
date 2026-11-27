@@ -85,12 +85,20 @@ function calories(ctx: MetricContext): MetricValue {
   return { value: thousands(ctx.m.calories), unit: 'cal' };
 }
 
+/** Distance piece: finish is a time. Time piece: finish is a distance. Piece size comes from the PM, so it works without a plan. */
 function projectedFinish(ctx: MetricContext): MetricValue {
   const { m, plan } = ctx;
-  if (m.projectedWorkTimeMs > 0) return { value: clock(m.projectedWorkTimeMs) };
-  if (plan?.kind === 'single-distance' && plan.value && m.avgPaceMsPer500 > 0) {
-    return { value: clock((plan.value / 500) * m.avgPaceMsPer500) };
+  if (m.workoutType.startsWith('fixed-distance') || plan?.kind === 'single-distance') {
+    if (m.projectedWorkTimeMs > 0) return { value: clock(m.projectedWorkTimeMs) };
+    const d = m.workoutDistanceM || plan?.value || 0;
+    return d > 0 && m.avgPaceMsPer500 > 0 ? { value: clock((d / 500) * m.avgPaceMsPer500) } : { value: DASH };
   }
+  if (m.workoutType.startsWith('fixed-time') || plan?.kind === 'single-time') {
+    if (m.projectedWorkDistanceM > 0) return { value: thousands(m.projectedWorkDistanceM), unit: 'm' };
+    const t = m.workoutDurationMs || plan?.value || 0;
+    return t > 0 && m.avgPaceMsPer500 > 0 ? { value: thousands((t / m.avgPaceMsPer500) * 500), unit: 'm' } : { value: DASH };
+  }
+  if (m.projectedWorkTimeMs > 0) return { value: clock(m.projectedWorkTimeMs) };
   return { value: DASH };
 }
 
@@ -171,7 +179,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   strokeCount: { label: 'Strokes', description: 'Stroke count.', compute: (c) => ({ value: String(Math.max(0, Math.round(c.m.strokeCount))) }) },
   speed: { label: 'Speed', description: 'Speed in metres per second.', compute: (c) => ({ value: fixed(c.m.speedMps, 2), unit: 'm/s' }) },
   speedKmh: { label: 'Speed', description: 'Speed in kilometres per hour.', compute: (c) => ({ value: fixed(c.m.speedMps * 3.6, 1), unit: 'km/h' }) },
-  projectedFinish: { label: 'Proj. finish', description: 'Projected finish time at your current average.', compute: projectedFinish },
+  projectedFinish: { label: 'Proj. finish', description: 'Projected finish at your current average: time for a distance piece, distance for a time piece.', compute: projectedFinish },
   projectedDistance: { label: 'Proj. distance', description: 'Projected distance at your current average.', compute: projectedDistance },
   wattsPerKg: {
     label: 'W/kg',
