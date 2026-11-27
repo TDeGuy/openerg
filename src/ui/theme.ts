@@ -26,52 +26,6 @@ export interface Palette {
   zones: [string, string, string, string, string];
 }
 
-export const darkPalette: Palette = {
-  dark: true,
-  bg: '#0B0F14',
-  surface: '#151B23',
-  surfaceAlt: '#1E2630',
-  border: '#2A3441',
-  text: '#F2F5F8',
-  textDim: '#A7B3C2',
-  textFaint: '#6B7888',
-  accent: '#2DD4BF',
-  accentText: '#04211D',
-  good: '#4ADE80',
-  warn: '#FBBF24',
-  bad: '#F87171',
-  pace: '#2DD4BF',
-  watts: '#FBBF24',
-  rate: '#A78BFA',
-  heart: '#F87171',
-  force: '#38BDF8',
-  forceAlt: '#64748B',
-  zones: ['#60A5FA', '#34D399', '#FBBF24', '#FB923C', '#F87171'],
-};
-
-export const lightPalette: Palette = {
-  dark: false,
-  bg: '#F4F6F8',
-  surface: '#FFFFFF',
-  surfaceAlt: '#EBEEF2',
-  border: '#D5DBE3',
-  text: '#0F1720',
-  textDim: '#4A5665',
-  textFaint: '#6F7B89',
-  accent: '#0A7A70',
-  accentText: '#FFFFFF',
-  good: '#16A34A',
-  warn: '#B45309',
-  bad: '#DC2626',
-  pace: '#0A7A70',
-  watts: '#B45309',
-  rate: '#7C3AED',
-  heart: '#DC2626',
-  force: '#0284C7',
-  forceAlt: '#94A3B8',
-  zones: ['#2563EB', '#059669', '#A16207', '#EA580C', '#DC2626'],
-};
-
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
 export const radius = { sm: 8, md: 12, lg: 18, pill: 999 } as const;
 
@@ -96,7 +50,7 @@ const glacier: Palette = {
 /** Ember: ink background, amber numbers, blue support. */
 const ember: Palette = {
   dark: true,
-  bg: '#0F1115', surface: '#181B21', surfaceAlt: '#232831', border: '#2F3642',
+  bg: '#110E0B', surface: '#1B1713', surfaceAlt: '#27211B', border: '#3A3128',
   text: '#F5F6F8', textDim: '#B6BCC8', textFaint: '#7F8796',
   accent: '#FFB224', accentText: '#2A1A00',
   good: '#5FD68B', warn: '#FF8A4C', bad: '#F26D6D',
@@ -108,7 +62,7 @@ const ember: Palette = {
 /** Regatta: black and green. */
 const regatta: Palette = {
   dark: true,
-  bg: '#0A0C0B', surface: '#141816', surfaceAlt: '#1E2421', border: '#2A332E',
+  bg: '#07100C', surface: '#101B15', surfaceAlt: '#1A2A21', border: '#24392D',
   text: '#F2F5F3', textDim: '#B4BDB7', textFaint: '#7F8B83',
   accent: '#3DDC84', accentText: '#04210F',
   good: '#3DDC84', warn: '#F5C542', bad: '#F26D6D',
@@ -132,7 +86,7 @@ const boathouse: Palette = {
 /** Chalk: warm light theme for bright rooms. */
 const chalk: Palette = {
   dark: false,
-  bg: '#F6F3EE', surface: '#FFFFFF', surfaceAlt: '#ECE7DF', border: '#D9D2C7',
+  bg: '#F5F1EA', surface: '#FFFDF9', surfaceAlt: '#EAE3D7', border: '#D6CDBD',
   text: '#1B1F24', textDim: '#4F5863', textFaint: '#6B7480',
   accent: '#1F5FBF', accentText: '#FFFFFF',
   good: '#1A8F5A', warn: '#B45309', bad: '#C8323C',
@@ -146,9 +100,7 @@ export const THEMES = {
   ember: { name: 'Ember', palette: ember },
   regatta: { name: 'Regatta', palette: regatta },
   boathouse: { name: 'Boathouse', palette: boathouse },
-  tide: { name: 'Tide', palette: darkPalette },
   chalk: { name: 'Chalk', palette: chalk },
-  daylight: { name: 'Daylight', palette: lightPalette },
 } as const;
 
 export type ThemeId = keyof typeof THEMES;
@@ -156,7 +108,9 @@ export type ThemeId = keyof typeof THEMES;
 /** Stored values from before named themes existed map onto the new ids. */
 export function resolveThemeId(pref: string): ThemeId {
   if (pref in THEMES) return pref as ThemeId;
-  return pref === 'light' ? 'daylight' : 'glacier';
+  if (pref === 'light' || pref === 'daylight') return 'chalk';
+  if (pref === 'tide') return 'glacier';
+  return 'glacier';
 }
 
 /** Current palette, honouring the user's theme setting. */

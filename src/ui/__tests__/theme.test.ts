@@ -17,7 +17,9 @@ describe('themes', () => {
   it('maps legacy stored values', () => {
     expect(resolveThemeId('system')).toBe('glacier');
     expect(resolveThemeId('dark')).toBe('glacier');
-    expect(resolveThemeId('light')).toBe('daylight');
+    expect(resolveThemeId('light')).toBe('chalk');
+    expect(resolveThemeId('daylight')).toBe('chalk');
+    expect(resolveThemeId('tide')).toBe('glacier');
     expect(resolveThemeId('ember')).toBe('ember');
   });
 
