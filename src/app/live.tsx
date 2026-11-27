@@ -16,7 +16,7 @@ import { averageHeartRate, reconnectNow, retrySave, useSession, useSessionExtras
 import { useSettings } from '@/storage/settings';
 import { dialog } from '@/ui/dialog';
 import { Button, EmptyState, Text } from '@/ui/kit';
-import { spacing, useTheme } from '@/ui/theme';
+import { radius, spacing, useTheme } from '@/ui/theme';
 import { planTitle } from '@/workouts';
 
 function leave() {
@@ -270,7 +270,7 @@ export default function LiveScreen() {
         <Text size="lg" weight="800" numberOfLines={1} style={{ flexShrink: 1 }}>
           {plan ? planTitle(plan) : 'Just Row'}
         </Text>
-        <Text size="sm" tone={resting ? 'warn' : 'faint'} weight="700" numberOfLines={1}>
+        <Text size="sm" tone={state === 'ROWING' ? 'accent' : state === 'READY' ? 'faint' : 'warn'} weight="800" numberOfLines={1}>
           {rep ? `${rep} · ${state}` : state}
         </Text>
         <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing.md }}>
@@ -316,7 +316,7 @@ export default function LiveScreen() {
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, gap: spacing.xs }}>
             <ConnectionBanner />
             {pmLost && !connected ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm, borderRadius: 8, backgroundColor: t.surface, borderWidth: 1, borderColor: t.bad }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm, borderRadius: radius.sm, backgroundColor: t.surface, borderWidth: 1, borderColor: t.bad }}>
                 <Text tone="bad" weight="700" style={{ flex: 1 }}>
                   Lost the PM5. Tap to reconnect
                 </Text>

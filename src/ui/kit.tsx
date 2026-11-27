@@ -92,7 +92,8 @@ export function Card({
   const [down, setDown] = useState(false);
   const base: ViewStyle = {
     backgroundColor: t.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
+    borderCurve: 'continuous',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: t.border,
     padding: spacing.lg,
@@ -154,7 +155,8 @@ export function Button({
       style={[
         {
           backgroundColor: bg,
-          borderRadius: radius.md,
+          borderRadius: radius.lg,
+          borderCurve: 'continuous',
           paddingVertical: small ? spacing.sm : spacing.md + 2,
           paddingHorizontal: small ? spacing.md : spacing.lg,
           alignItems: 'center',
@@ -235,6 +237,7 @@ export function Chip({
         paddingHorizontal: spacing.md,
         paddingVertical: 6,
         borderRadius: radius.pill,
+        borderCurve: 'continuous',
         borderWidth: 1,
         borderColor: selected ? c : t.border,
         backgroundColor: selected ? c + '26' : 'transparent',
@@ -286,6 +289,7 @@ export function Row({
   right?: React.ReactNode;
   onPress?: () => void;
 }) {
+  const [down, setDown] = useState(false);
   const body = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 40 }}>
       <View style={{ flex: 1 }}>
@@ -299,7 +303,16 @@ export function Row({
       {right}
     </View>
   );
-  return onPress ? <Pressable onPress={onPress}>{body}</Pressable> : body;
+  if (!onPress) return body;
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={() => setDown(true)}
+      onPressOut={() => setDown(false)}
+      style={{ opacity: down ? 0.7 : 1, transform: [{ scale: down ? 0.99 : 1 }], transitionProperty: ['opacity', 'transform'], ...PRESS_TRANSITION }}>
+      {body}
+    </AnimatedPressable>
+  );
 }
 
 export function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
