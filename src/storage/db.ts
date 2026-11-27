@@ -24,6 +24,8 @@ function bump() {
 /* ───────────── open + migrations ───────────── */
 
 const DB_NAME = 'openerg.db';
+/** Web falls back to memory and may hang on open; phones must not, so they fail loudly instead. */
+const WEB = typeof document !== 'undefined';
 
 const MIGRATIONS: string[] = [
   `CREATE TABLE IF NOT EXISTS workouts (
@@ -80,13 +82,12 @@ function getDb(): Promise<SQLite.SQLiteDatabase | null> {
       await migrate(db);
       return db;
     })();
-    // On web a worker that fails to load leaves openDatabaseAsync pending forever (no error),
-    // which used to hang every save, so a finished workout was never stored.
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`open timed out after ${OPEN_TIMEOUT_MS} ms`)), OPEN_TIMEOUT_MS),
-    );
+    // A hung open (a web worker that never loads gives no error) must not stall a save forever.
+    const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`open timed out after ${OPEN_TIMEOUT_MS} ms`)), OPEN_TIMEOUT_MS));
+    // A failure is not cached: the next call tries again, so one slow start cannot lose later workouts.
     opening = Promise.race([open, timeout]).catch((e) => {
-      console.warn('[db] SQLite unavailable, using in-memory storage', e);
+      console.warn('[db] SQLite unavailable', e);
+      opening = null;
       return null;
     });
   }
@@ -97,8 +98,11 @@ function getDb(): Promise<SQLite.SQLiteDatabase | null> {
 
 export async function saveWorkouts(records: WorkoutRecord[]): Promise<void> {
   const db = await getDb();
-  if (!db) for (const r of records) mem.workouts.set(r.id, r);
-  else {
+  if (!db) {
+    // Phones keep nothing in memory: the caller keeps the workout and retries, instead of losing it on exit.
+    if (!WEB) throw new Error('The workout database could not be opened. The workout was not saved.');
+    for (const r of records) mem.workouts.set(r.id, r);
+  } else {
     await db.withTransactionAsync(async () => {
       for (const r of records) {
         await db.runAsync(
@@ -213,18 +217,7 @@ export async function deleteAllWorkouts(includePlans = false): Promise<void> {
 }
 
 /** Deletes every workout, custom plan and favourite. */
-export async function deleteAllData(): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    mem.workouts.clear();
-    mem.plans.clear();
-    mem.favs.clear();
-  } else {
-    await db.execAsync('DELETE FROM workouts; DELETE FROM plans; DELETE FROM favorites;');
-  }
-  bump();
-  await forgetUploads();
-}
+export const deleteAllData = () => deleteAllWorkouts(true);
 
 export async function updateWorkoutMeta(id: string, patch: { title?: string; notes?: string; tags?: string[] }): Promise<void> {
   const db = await getDb();

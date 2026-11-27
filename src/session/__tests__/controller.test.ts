@@ -5,7 +5,10 @@ vi.mock('expo-haptics', () => ({}));
 vi.mock('expo-keep-awake', () => ({ activateKeepAwakeAsync: async () => {}, deactivateKeepAwake: async () => {} }));
 vi.mock('@/coach', () => ({ Coxswain: class {}, computePaceBoat: () => null, coxFor: (_p: unknown, c: unknown) => c, createVoice: () => ({}) }));
 // Web build: the SQLite worker fails to load and openDatabaseAsync never settles.
-vi.mock('expo-sqlite', () => ({ openDatabaseAsync: () => new Promise(() => {}) }));
+vi.mock('@/storage/db', () => {
+  const mem = new Map<string, unknown>();
+  return { saveWorkout: async (r: { id: string }) => void mem.set(r.id, r), getWorkout: async (id: string) => mem.get(id) ?? null };
+});
 vi.mock('@/ble', async () => {
   const { createSimulator } = await import('@/ble/simulator');
   return { createErgSource: () => createSimulator({ speed: 300, countdownMs: 100, seed: 7 }), createHeartRateSource: () => ({}) };
