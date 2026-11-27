@@ -1,4 +1,4 @@
-/** Shared OAuth bits for Strava and Concept2. Pure (fetch only), unit tested. */
+/** Shared OAuth bits for the Concept2 Logbook. Pure (fetch only), unit tested. */
 
 export interface Tokens {
   accessToken: string;

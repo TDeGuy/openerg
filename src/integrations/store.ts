@@ -22,7 +22,7 @@ export interface UploadStatus {
   state: 'done' | 'failed';
   at: number;
   error?: string;
-  /** Strava activity id / Concept2 result id when known. */
+  /** Concept2 result id when known. */
   remoteId?: string;
 }
 /** A problem the user should see on the home screen. In memory only; dismissed or cleared on a successful reconnect. */
@@ -32,7 +32,6 @@ export interface IntegrationAlert {
   message: string;
 }
 interface Persisted {
-  strava: ServiceAuth;
   concept2: ServiceAuth;
   c2Env: C2Env;
   uploads: Record<string, Partial<Record<UploadService, UploadStatus>>>;
@@ -53,7 +52,6 @@ const empty = (): ServiceAuth => ({ clientId: '', clientSecret: '', tokens: null
 let loading: Promise<void> | null = null;
 
 export const useIntegrations = create<Store>()((set, get) => ({
-  strava: empty(),
   concept2: empty(),
   c2Env: 'dev',
   uploads: {},
@@ -69,7 +67,6 @@ export const useIntegrations = create<Store>()((set, get) => ({
         if (raw) {
           const p = JSON.parse(raw) as Partial<Persisted>;
           set({
-            strava: { ...empty(), ...p.strava },
             concept2: { ...empty(), ...p.concept2 },
             c2Env: p.c2Env === 'production' ? 'production' : 'dev',
             uploads: p.uploads ?? {},
@@ -84,8 +81,8 @@ export const useIntegrations = create<Store>()((set, get) => ({
   },
   patch(p) {
     set(p);
-    const { strava, concept2, c2Env, uploads } = get();
-    void kv.setItem(KEY, JSON.stringify({ strava, concept2, c2Env, uploads }));
+    const { concept2, c2Env, uploads } = get();
+    void kv.setItem(KEY, JSON.stringify({ concept2, c2Env, uploads }));
   },
   setBusy(key, on) {
     const busy = { ...get().busy };

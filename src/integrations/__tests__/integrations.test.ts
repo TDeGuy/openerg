@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SplitSummary, StrokeSample, WorkoutRecord } from '@/core/types';
 import { buildC2Result, c2Date, c2Post, c2Refresh, weightClass } from '../concept2';
 import { freshTokens, parseRedirect } from '../oauth';
-import { stravaFields, stravaRefresh, stravaUpload } from '../strava';
 
 const stroke = (n: number, t: number, d: number, i = 0): StrokeSample =>
   ({ strokeNumber: n, elapsedMs: t, distanceM: d, paceMsPer500: 120_000, watts: 200, strokeRate: 24.4, heartRate: 150, intervalCount: i, forceCurve: [] }) as unknown as StrokeSample;
@@ -47,26 +46,6 @@ describe('concept2 payload', () => {
   });
 });
 
-describe('strava', () => {
-  it('sets trainer + rowing and a duplicate-guard external id', () => {
-    expect(stravaFields(rec())).toMatchObject({ data_type: 'tcx', sport_type: 'Rowing', trainer: '1', external_id: 'openerg-w1', description: 'a\nb' });
-  });
-  it('polls until the activity exists', async () => {
-    const f = vi.fn()
-      .mockResolvedValueOnce(json({ id_str: '9' }, 201))
-      .mockResolvedValueOnce(json({ id_str: '9', status: 'processing', activity_id: null, error: null }))
-      .mockResolvedValueOnce(json({ activity_id: 77, error: null }));
-    vi.stubGlobal('fetch', f);
-    const id = await stravaUpload('tok', rec(), { uri: 'file:///x.tcx', name: 'x.tcx', type: 't' }, { sleep: async () => undefined });
-    expect(id).toBe('77');
-    expect(f.mock.calls[1][0]).toContain('/uploads/9');
-  });
-  it('reports processing errors such as duplicates', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json({ id: 1 }, 201)).mockResolvedValueOnce(json({ error: 'x.tcx duplicate of activity 5' })));
-    await expect(stravaUpload('t', rec(), { uri: 'u', name: 'n', type: 't' }, { sleep: async () => undefined })).rejects.toThrow(/duplicate/);
-  });
-});
-
 describe('tokens', () => {
   const t = { accessToken: 'a', refreshToken: 'r', expiresAt: 10_000_000 };
   it('keeps a valid token and refreshes an expiring one', async () => {
@@ -75,18 +54,12 @@ describe('tokens', () => {
     expect((await freshTokens(t, refresh, 9_900_000)).accessToken).toBe('new');
     expect(refresh).toHaveBeenCalledWith('r');
   });
-  it('strava refresh stores the rotated refresh token (epoch seconds)', async () => {
-    const f = vi.fn().mockResolvedValue(json({ access_token: 'n', refresh_token: 'r2', expires_at: 2000 }));
-    vi.stubGlobal('fetch', f);
-    expect(await stravaRefresh('id', 'sec', 'r1')).toEqual({ accessToken: 'n', refreshToken: 'r2', expiresAt: 2_000_000 });
-    expect(f.mock.calls[0][1].body).toContain('grant_type=refresh_token');
-  });
   it('concept2 refresh uses expires_in', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ access_token: 'n', refresh_token: 'r2', expires_in: 100 })));
     expect((await c2Refresh('dev', 'i', 's', 'r1', 1000)).expiresAt).toBe(101_000);
   });
   it('parses redirects', () => {
-    expect(parseRedirect('openerg://oauth/strava?state=&code=abc&scope=activity:write')).toBe('abc');
-    expect(() => parseRedirect('openerg://oauth/strava?error=access_denied')).toThrow(/denied/);
+    expect(parseRedirect('openerg:///oauth/concept2?state=&code=abc&scope=results:write')).toBe('abc');
+    expect(() => parseRedirect('openerg:///oauth/concept2?error=access_denied')).toThrow(/denied/);
   });
 });
