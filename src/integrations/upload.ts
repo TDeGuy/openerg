@@ -2,7 +2,7 @@
 import type { UploadService, WorkoutRecord } from '@/core/types';
 import { useSettings } from '@/storage/settings';
 import { buildC2Result, c2AuthUrl, c2Exchange, c2Post, c2Refresh, C2_REDIRECT } from './concept2';
-import { freshTokens, parseRedirect, type Tokens } from './oauth';
+import { freshTokens, newState, parseRedirect, type Tokens } from './oauth';
 import { setUploadStatus, useIntegrations } from './store';
 import { STRAVA_REDIRECT, stravaAuthUrl, stravaExchange, stravaFile, stravaRefresh, stravaRevoke, stravaUpload } from './strava';
 
@@ -21,13 +21,14 @@ async function authorise(service: UploadService): Promise<void> {
   const st = useIntegrations.getState();
   const { clientId, clientSecret } = st[service];
   if (!clientId.trim() || !clientSecret.trim()) throw new Error('Enter the client ID and client secret first.');
-  const url = service === 'strava' ? stravaAuthUrl(clientId.trim()) : c2AuthUrl(st.c2Env, clientId.trim());
+  const state = newState();
+  const url = service === 'strava' ? stravaAuthUrl(clientId.trim(), state) : c2AuthUrl(st.c2Env, clientId.trim(), state);
   const redirect = service === 'strava' ? STRAVA_REDIRECT : C2_REDIRECT;
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const WebBrowser = require('expo-web-browser') as typeof import('expo-web-browser');
   const res = await WebBrowser.openAuthSessionAsync(url, redirect);
   if (res.type !== 'success') throw new Error('Sign-in was cancelled.');
-  const code = parseRedirect(res.url);
+  const code = parseRedirect(res.url, state);
   const tokens =
     service === 'strava'
       ? await stravaExchange(clientId.trim(), clientSecret.trim(), code)

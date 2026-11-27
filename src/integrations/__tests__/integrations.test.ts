@@ -61,9 +61,13 @@ describe('strava', () => {
     expect(id).toBe('77');
     expect(f.mock.calls[1][0]).toContain('/uploads/9');
   });
-  it('reports processing errors such as duplicates', async () => {
+  it('treats a repeat upload as the earlier activity', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json({ id: 1 }, 201)).mockResolvedValueOnce(json({ error: 'x.tcx duplicate of activity 5' })));
-    await expect(stravaUpload('t', rec(), { uri: 'u', name: 'n', type: 't' }, { sleep: async () => undefined })).rejects.toThrow(/duplicate/);
+    expect(await stravaUpload('t', rec(), { uri: 'u', name: 'n', type: 't' }, { sleep: async () => undefined })).toBe('5');
+  });
+  it('still reports other processing errors', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json({ id: 1 }, 201)).mockResolvedValueOnce(json({ error: 'bad file' })));
+    await expect(stravaUpload('t', rec(), { uri: 'u', name: 'n', type: 't' }, { sleep: async () => undefined })).rejects.toThrow(/bad file/);
   });
 });
 
@@ -86,7 +90,8 @@ describe('tokens', () => {
     expect((await c2Refresh('dev', 'i', 's', 'r1', 1000)).expiresAt).toBe(101_000);
   });
   it('parses redirects', () => {
-    expect(parseRedirect('openerg://oauth/strava?state=&code=abc&scope=activity:write')).toBe('abc');
-    expect(() => parseRedirect('openerg://oauth/strava?error=access_denied')).toThrow(/denied/);
+    expect(parseRedirect('openerg://oauth/strava?state=s1&code=abc&scope=activity:write', 's1')).toBe('abc');
+    expect(() => parseRedirect('openerg://oauth/strava?error=access_denied', 's1')).toThrow(/denied/);
+    expect(() => parseRedirect('openerg://oauth/strava?state=other&code=abc', 's1')).toThrow(/did not match/);
   });
 });

@@ -1,6 +1,6 @@
 /** Pure export builders: CSV (stroke-by-stroke + splits) and Garmin TCX v2. */
 import type { SplitSummary, StrokeSample, WorkoutRecord } from '@/core/types';
-import { mean } from '@/core/units';
+import { mean, pad2 } from '@/core/units';
 import { strokeTimeline, type TimelinePoint } from './timeline';
 
 export type ExportFormat = 'csv' | 'tcx' | 'json';
@@ -255,8 +255,7 @@ export function toJson(record: WorkoutRecord): string {
 /** Safe file name like "2026-03-12 2000m.tcx". */
 export function exportFileName(record: Pick<WorkoutRecord, 'startedAt' | 'title'>, format: ExportFormat): string {
   const d = new Date(record.startedAt);
-  const p = (n: number) => String(n).padStart(2, '0');
-  const date = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
+  const date = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}_${pad2(d.getHours())}${pad2(d.getMinutes())}`;
   const title = record.title.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40) || 'workout';
   return `OpenErg_${date}_${title}.${format}`;
 }
@@ -266,14 +265,17 @@ export const CSV_SUMMARY_HEADER = [
   'avg_heart_rate_bpm', 'max_heart_rate_bpm', 'calories', 'drag_factor', 'rest_time_s', 'notes', 'tags',
 ];
 
+export const summaryCsvHeader = () => row(CSV_SUMMARY_HEADER);
+
+/** One summary row for one workout. */
+export const summaryCsvRow = (r: WorkoutRecord) =>
+  row([
+    iso(r.startedAt), r.title, r.machineType, fx(r.distanceM, 1), fx(r.elapsedMs / 1000, 1), fx(r.avgPaceMsPer500 / 1000, 1),
+    fx(r.avgWatts, 0), fx(r.avgStrokeRate, 0), r.avgHeartRate, r.maxHeartRate, fx(r.calories, 0), fx(r.avgDragFactor, 0),
+    fx(r.totalRestMs / 1000, 1), r.notes, (r.tags ?? []).join(' '),
+  ]);
+
 /** One row per workout (summary only), for spreadsheets. */
 export function toSummaryCsv(records: WorkoutRecord[]): string {
-  const rows = records.map((r) =>
-    row([
-      iso(r.startedAt), r.title, r.machineType, fx(r.distanceM, 1), fx(r.elapsedMs / 1000, 1), fx(r.avgPaceMsPer500 / 1000, 1),
-      fx(r.avgWatts, 0), fx(r.avgStrokeRate, 0), r.avgHeartRate, r.maxHeartRate, fx(r.calories, 0), fx(r.avgDragFactor, 0),
-      fx(r.totalRestMs / 1000, 1), r.notes, (r.tags ?? []).join(' '),
-    ]),
-  );
-  return [row(CSV_SUMMARY_HEADER), ...rows].join('\r\n') + '\r\n';
+  return [summaryCsvHeader(), ...records.map(summaryCsvRow)].join('\r\n') + '\r\n';
 }

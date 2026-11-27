@@ -6,12 +6,13 @@ import { Platform } from 'react-native';
 import type { WorkoutRecord } from '@/core/types';
 import { useIntegrations } from '@/integrations/store';
 import { backupHead, backupTail, backupWorkoutLines, parseBackupStream, RESTORE_BATCH, type ParsedBackup, type UploadLedger } from './backup';
-import { getAllWorkouts, getFavoritePlanIds, getWorkoutBatch, getWorkoutIds, listCustomPlans, listWorkouts, saveWorkouts, savePlan, setPlanFavorite } from './db';
-import { exportFileName, toCsv, toJson, toSummaryCsv, toTcx, type ExportFormat } from './formats';
+import { getFavoritePlanIds, getWorkoutBatch, getWorkoutIds, listCustomPlans, listWorkouts, saveWorkouts, savePlan, setPlanFavorite } from './db';
+import { exportFileName, summaryCsvHeader, summaryCsvRow, toCsv, toJson, toTcx, type ExportFormat } from './formats';
+import { pad2 } from '@/core/units';
 import { skipDuplicates, parseLogbookCsv, parseTcx } from './import/parse';
 import { GROUPS, GROUP_LABEL, mergeLedger, mergeRestoredSettings, planRestore, type RestoreOptions } from './restore';
 import { flushSettings, useSettings } from './settings';
-import { zipStore } from './zip';
+import { zipWrite } from './zip';
 
 export { toCsv, toTcx, toJson, exportFileName, type ExportFormat } from './formats';
 
@@ -22,7 +23,7 @@ const MIME: Record<ExportFormat | 'zip', { mimeType: string; UTI: string }> = {
   zip: { mimeType: 'application/zip', UTI: 'public.zip-archive' },
 };
 
-function webDownload(name: string, content: string | Uint8Array | string[], mimeType: string): void {
+function webDownload(name: string, content: string | Uint8Array | (string | Uint8Array)[], mimeType: string): void {
   const g = globalThis as unknown as {
     document?: { createElement(t: string): { href: string; download: string; click(): void; remove(): void }; body: { appendChild(n: unknown): void } };
     Blob?: new (parts: (string | Uint8Array)[], opts: { type: string }) => unknown;
@@ -60,8 +61,7 @@ export async function shareWorkout(record: WorkoutRecord, format: ExportFormat):
 
 const stamp = () => {
   const d = new Date();
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 };
 
 /** Writes the backup a batch of workouts at a time, so memory stays bounded however many workouts there are. */
@@ -102,19 +102,48 @@ export async function shareBackup(): Promise<void> {
   await Sharing.shareAsync(file.uri, { ...MIME.json, dialogTitle: 'OpenErg backup' });
 }
 
-/** One zip: summary.csv (a row per workout) plus a TCX file per workout. Returns the workout count. */
+/** One zip: summary.csv (a row per workout) plus a TCX file per workout. Written a batch at a time. Returns the workout count. */
 export async function shareAllWorkouts(): Promise<number> {
-  const workouts = await getAllWorkouts();
-  const files = [{ name: 'OpenErg_workouts.csv', text: toSummaryCsv(workouts) }];
-  const used = new Set<string>();
-  for (const w of workouts) {
-    let name = exportFileName(w, 'tcx');
-    while (used.has(name)) name = name.replace('.tcx', '_2.tcx');
-    used.add(name);
-    files.push({ name, text: toTcx(w) });
+  const name = `OpenErg_all_workouts_${stamp()}.zip`;
+  const web = Platform.OS === 'web';
+  const parts: Uint8Array[] = [];
+  const file = new File(Paths.cache, name);
+  let handle: ReturnType<File['open']> | null = null;
+  if (!web) {
+    if (file.exists) file.delete();
+    file.create();
+    handle = file.open(FileMode.Truncate);
   }
-  await shareText(`OpenErg_all_workouts_${stamp()}.zip`, zipStore(files), 'zip', 'OpenErg workouts');
-  return workouts.length;
+  const write = (bytes: Uint8Array) => (web ? void parts.push(bytes) : handle!.writeBytes(bytes));
+  const summary = [summaryCsvHeader()];
+  const used = new Set<string>();
+  let count = 0;
+  async function* entries() {
+    for (let offset = 0; ; offset += RESTORE_BATCH) {
+      const batch = await getWorkoutBatch(offset, RESTORE_BATCH);
+      if (!batch.length) break;
+      for (const w of batch) {
+        let n = exportFileName(w, 'tcx');
+        while (used.has(n)) n = n.replace('.tcx', '_2.tcx');
+        used.add(n);
+        summary.push(summaryCsvRow(w));
+        yield { name: n, text: toTcx(w) };
+      }
+      count += batch.length;
+    }
+    yield { name: 'OpenErg_workouts.csv', text: summary.join('\r\n') + '\r\n' };
+  }
+  try {
+    await zipWrite(entries(), write);
+  } finally {
+    handle?.close();
+  }
+  if (web) webDownload(name, parts, MIME.zip.mimeType);
+  else {
+    if (!(await Sharing.isAvailableAsync())) throw new Error('Sharing is not available on this device.');
+    await Sharing.shareAsync(file.uri, { ...MIME.zip, dialogTitle: 'OpenErg workouts' });
+  }
+  return count;
 }
 
 async function pick(multiple: boolean) {
@@ -196,9 +225,9 @@ export async function restoreBackup(parsed: ParsedBackup, o: RestoreOptions): Pr
     await flushSettings();
   }
   if (o.groups.services && Object.keys(parsed.uploads).length) {
-    const store = useIntegrations.getState();
-    await store.load();
-    store.patch({ uploads: mergeLedger(store.uploads as UploadLedger, parsed.uploads) as typeof store.uploads });
+    await useIntegrations.getState().load();
+    const now = useIntegrations.getState(); // read after load: an earlier snapshot would be empty
+    now.patch({ uploads: mergeLedger(now.uploads as UploadLedger, parsed.uploads) as typeof now.uploads });
   }
   lines.push(chosen.length ? `Restored: ${chosen.map((g) => GROUP_LABEL[g]).join(', ')}.` : 'No settings were restored.');
   const kept = GROUPS.filter((g) => !chosen.includes(g));
