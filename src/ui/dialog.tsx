@@ -56,6 +56,7 @@ export function DialogHost() {
             maxWidth: 420,
             backgroundColor: t.surface,
             borderRadius: radius.lg,
+            borderCurve: 'continuous',
             padding: spacing.xl,
             gap: spacing.md,
           }}>
