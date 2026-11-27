@@ -546,7 +546,7 @@ export interface AppSettings {
   uploads: Record<UploadService, UploadMode>;
 }
 
-export type UploadService = 'strava' | 'concept2';
+export type UploadService = 'concept2';
 export type UploadMode = 'ask' | 'always' | 'never';
 
 export type ForceOverlay = 'previous' | 'average' | 'ideal';

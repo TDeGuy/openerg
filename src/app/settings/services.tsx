@@ -6,7 +6,6 @@ import { Field } from '@/components/analysis/ui';
 import type { UploadMode, UploadService } from '@/core/types';
 import { C2_REDIRECT } from '@/integrations/concept2';
 import { useIntegrations } from '@/integrations/store';
-import { STRAVA_CALLBACK_DOMAIN, STRAVA_REDIRECT } from '@/integrations/strava';
 import { connectService, disconnectService, SERVICE_NAME } from '@/integrations/upload';
 import { useSettings } from '@/storage/settings';
 import { dialog } from '@/ui/dialog';
@@ -20,11 +19,6 @@ const MODES: { value: UploadMode; label: string }[] = [
 ];
 
 const STEPS: Record<UploadService, string[]> = {
-  strava: [
-    '1. Open strava.com/settings/api and create an app (any name and website).',
-    `2. Set "Authorization Callback Domain" to: ${STRAVA_CALLBACK_DOMAIN}  (OpenErg redirects to ${STRAVA_REDIRECT}).`,
-    '3. Copy the Client ID and Client Secret into the fields above, then tap Connect.',
-  ],
   concept2: [
     '1. Create an API client at log.concept2.com/developers/keys (sign in with your Logbook account). Write apps start on log-dev.concept2.com until Concept2 approves production.',
     `2. Register this redirect URI: ${C2_REDIRECT}`,
@@ -137,7 +131,6 @@ export default function ServicesScreen() {
       <Text size="sm" tone="dim">
         Uploads need your own API application on each service. Credentials and tokens stay on this phone, and nothing is sent until you connect and upload.
       </Text>
-      <ServiceCard service="strava" />
       <ServiceCard service="concept2" />
     </Screen>
   );

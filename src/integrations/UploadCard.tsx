@@ -12,7 +12,7 @@ import { spacing } from '@/ui/theme';
 import { useIntegrations } from './store';
 import { SERVICE_NAME, uploadWorkout } from './upload';
 
-const SERVICES: UploadService[] = ['strava', 'concept2'];
+const SERVICES: UploadService[] = ['concept2'];
 
 export function UploadCard({ workoutId, variant }: { workoutId: string | null; variant: 'summary' | 'detail' }) {
   const load = useIntegrations((s) => s.load);
@@ -44,7 +44,7 @@ export function UploadCard({ workoutId, variant }: { workoutId: string | null; v
       <Card>
         <SectionTitle>Upload</SectionTitle>
         <Text size="sm" tone="dim">
-          Send this workout to Strava or the Concept2 Logbook.
+          Send this workout to the Concept2 Logbook.
         </Text>
         <Button title="Connected services" variant="secondary" onPress={() => router.push('/settings/services')} />
       </Card>
