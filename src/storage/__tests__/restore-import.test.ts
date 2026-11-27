@@ -3,7 +3,7 @@ import { DEFAULT_SETTINGS } from '@/core/defaults';
 import { mergeLedger, mergeRestoredSettings, planRestore, type SettingsGroup } from '../restore';
 import { parseLogbookCsv, parseTcx, skipDuplicates } from '../import/parse';
 import { toSummaryCsv, toTcx } from '../formats';
-import { zipStore } from '../zip';
+import { zipWrite } from '../zip';
 import { buildBackup, parseBackup } from '../backup';
 
 const none: Record<SettingsGroup, boolean> = { coxswain: false, layouts: false, display: false, profile: false, services: false, devices: false };
@@ -68,12 +68,14 @@ describe('imports', () => {
 });
 
 describe('export all', () => {
-  it('builds a summary csv and a valid zip', () => {
+  it('builds a summary csv and a valid zip', async () => {
     const [w] = parseLogbookCsv(CSV);
     expect(toSummaryCsv([w]).split('\r\n')).toHaveLength(3);
-    const z = zipStore([{ name: 'a.txt', text: 'hello' }]);
-    expect(Array.from(z.slice(0, 4))).toEqual([0x50, 0x4b, 3, 4]);
-    expect(new DataView(z.buffer).getUint32(z.length - 22, true)).toBe(0x06054b50);
+    const parts: Uint8Array[] = [];
+    await zipWrite([{ name: 'a.txt', text: 'hello' }], (b) => parts.push(b));
+    expect(Array.from(parts[0].slice(0, 4))).toEqual([0x50, 0x4b, 3, 4]);
+    const end = parts[parts.length - 1];
+    expect(new DataView(end.buffer, end.byteOffset, end.byteLength).getUint32(0, true)).toBe(0x06054b50);
   });
 });
 

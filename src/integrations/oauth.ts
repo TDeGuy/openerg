@@ -15,12 +15,16 @@ export function formBody(params: Record<string, string>): string {
     .join('&');
 }
 
-/** Pulls `code` out of the redirect URL, or throws a readable error. */
-export function parseRedirect(url: string): string {
+/** A random value sent with each sign-in link; the service must send it back unchanged. */
+export const newState = (): string => Array.from(globalThis.crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('');
+
+/** Pulls `code` out of the redirect URL, or throws a readable error. `state` is the value sent with the link. */
+export function parseRedirect(url: string, state: string): string {
   const q = url.split('#')[0].split('?')[1] ?? '';
   const p = new URLSearchParams(q);
   const err = p.get('error');
   if (err) throw new Error(err === 'access_denied' ? 'Access was denied.' : `Authorisation failed: ${err}`);
+  if (p.get('state') !== state) throw new Error('The sign-in did not match this request. Try again.');
   const code = p.get('code');
   if (!code) throw new Error('The service did not return an authorisation code.');
   return code;
