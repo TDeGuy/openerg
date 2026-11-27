@@ -92,7 +92,7 @@ export function Card({
   const [down, setDown] = useState(false);
   const base: ViewStyle = {
     backgroundColor: t.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderCurve: 'continuous',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: t.border,
@@ -155,7 +155,7 @@ export function Button({
       style={[
         {
           backgroundColor: bg,
-          borderRadius: radius.md,
+          borderRadius: radius.lg,
           borderCurve: 'continuous',
           paddingVertical: small ? spacing.sm : spacing.md + 2,
           paddingHorizontal: small ? spacing.md : spacing.lg,
