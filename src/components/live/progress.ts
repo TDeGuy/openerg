@@ -14,6 +14,7 @@ import type {
   WorkoutPlan,
 } from '@/core/types';
 import { clamp, formatDuration, formatPace, parseDuration } from '@/core/units';
+import { planFromPm } from '@/session/phase';
 import { segmentLookup, segmentProgress } from '@/workouts/segments';
 
 export type ProgressUnit = 'distance' | 'time' | 'calorie';
@@ -53,7 +54,9 @@ function defAt(plan: WorkoutPlan, index: number): IntervalDef | undefined {
   return plan.intervals?.[plan.repeatForever ? 0 : index];
 }
 
-export function computeProgress(plan: WorkoutPlan | null, m: LiveMetrics, splits: SplitSummary[]): LiveProgress | null {
+export function computeProgress(planIn: WorkoutPlan | null, m: LiveMetrics, splits: SplitSummary[]): LiveProgress | null {
+  // A piece set on the erg has no app plan; its size from the PM still drives the countdown.
+  const plan = planIn ?? planFromPm(m);
   if (!plan) return null;
   const single = (unit: ProgressUnit, done: number): LiveProgress | null => {
     const total = plan.value ?? 0;

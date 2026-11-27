@@ -85,13 +85,14 @@ function calories(ctx: MetricContext): MetricValue {
   return { value: thousands(ctx.m.calories), unit: 'cal' };
 }
 
+/** Distance piece: finish is a time. Time piece: finish is a distance. Piece size comes from the PM, so it works without a plan. */
+/** Finish time of a distance piece at the current average. Time pieces have no finish time, so they show a dash. */
 function projectedFinish(ctx: MetricContext): MetricValue {
   const { m, plan } = ctx;
   if (m.projectedWorkTimeMs > 0) return { value: clock(m.projectedWorkTimeMs) };
-  if (plan?.kind === 'single-distance' && plan.value && m.avgPaceMsPer500 > 0) {
-    return { value: clock((plan.value / 500) * m.avgPaceMsPer500) };
-  }
-  return { value: DASH };
+  const distancePiece = m.workoutType.startsWith('fixed-distance') || plan?.kind === 'single-distance';
+  const d = distancePiece ? m.workoutDistanceM || plan?.value || 0 : 0;
+  return d > 0 && m.avgPaceMsPer500 > 0 ? { value: clock((d / 500) * m.avgPaceMsPer500) } : { value: DASH };
 }
 
 function projectedDistance(ctx: MetricContext): MetricValue {
@@ -101,6 +102,15 @@ function projectedDistance(ctx: MetricContext): MetricValue {
     return { value: thousands((plan.value / m.avgPaceMsPer500) * 500), unit: 'm' };
   }
   return { value: DASH };
+}
+
+/** Current interval number. Shows "of N" only when the plan fixes the count; open-ended and PM-set intervals show the count alone. */
+function interval(ctx: MetricContext): MetricValue {
+  const { m, plan } = ctx;
+  if (!m.workoutType.includes('interval') && plan?.kind !== 'intervals') return { value: DASH };
+  const i = String(Math.floor(m.intervalCount) + 1);
+  const n = plan?.intervals?.length ?? 0;
+  return plan && !plan.repeatForever && n > 0 ? { value: i, unit: `of ${n}` } : { value: i };
 }
 
 export const METRICS: Record<MetricKey, MetricDef> = {
@@ -136,18 +146,9 @@ export const METRICS: Record<MetricKey, MetricDef> = {
       return { value: String(Math.round(hr)), unit: 'bpm', zone: heartRateZone(hr, c.profile) };
     },
   },
-  hrZone: {
-    label: 'HR zone',
-    description: 'Training zone from your max / resting heart rate.',
-    compute: (c) => {
-      const hr = c.m.heartRate;
-      const z = hr ? heartRateZone(hr, c.profile) : null;
-      return z ? { value: `Z${z}`, zone: z } : { value: DASH };
-    },
-  },
   elapsed: { label: 'Time', description: 'Time rowed; counts down when the piece has a time target.', compute: time },
   distance: { label: 'Distance', description: 'Distance rowed; counts down when the piece has a distance target.', compute: distance },
-  remaining: { label: 'Piece', description: 'Shows whatever the workout is set by: distance on distance pieces, time on time pieces (counting down); time when just rowing.', compute: remaining },
+  remaining: { label: 'Piece left', description: 'Shows whatever the workout is set by: distance on distance pieces, time on time pieces (counting down); time when just rowing.', compute: remaining },
   calories: { label: 'Calories', description: 'Calories burned; counts down when the piece has a calorie target.', compute: calories },
   calPerHour: { label: 'Cal/hr', description: 'Calorie burn rate.', compute: (c) => ({ value: thousands(c.m.caloriesPerHour), unit: 'cal/h' }) },
   dragFactor: { label: 'Drag', description: 'Drag factor of the flywheel.', compute: (c) => ({ value: int(c.m.dragFactor) }) },
@@ -155,7 +156,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   driveTime: { label: 'Drive time', description: 'Duration of the drive.', compute: (c) => ({ value: fixed(c.m.driveTimeMs / 1000, 2), unit: 's' }) },
   recoveryTime: { label: 'Recovery', description: 'Duration of the recovery.', compute: (c) => ({ value: fixed(c.m.recoveryTimeMs / 1000, 2), unit: 's' }) },
   driveRecoveryRatio: {
-    label: 'Ratio',
+    label: 'Drive:Rec',
     description: 'Drive : recovery ratio — aim for about 1:2 or longer.',
     compute: (c) => {
       const { driveTimeMs: d, recoveryTimeMs: r } = c.m;
@@ -167,12 +168,13 @@ export const METRICS: Record<MetricKey, MetricDef> = {
   strokeDistance: { label: 'Dist/stroke', description: 'Metres travelled per stroke.', compute: (c) => ({ value: fixed(c.m.strokeDistanceM, 1), unit: 'm' }) },
   peakForce: { label: 'Peak force', description: 'Peak handle force of the last stroke.', compute: (c) => force(c, c.m.peakForceN) },
   avgForce: { label: 'Avg force', description: 'Average handle force of the last drive.', compute: (c) => force(c, c.m.avgForceN) },
-  workPerStroke: { label: 'Work', description: 'Work per stroke.', compute: (c) => ({ value: int(c.m.workPerStrokeJ), unit: 'J' }) },
+  workPerStroke: { label: 'Work/stroke', description: 'Work per stroke.', compute: (c) => ({ value: int(c.m.workPerStrokeJ), unit: 'J' }) },
   strokeCount: { label: 'Strokes', description: 'Stroke count.', compute: (c) => ({ value: String(Math.max(0, Math.round(c.m.strokeCount))) }) },
   speed: { label: 'Speed', description: 'Speed in metres per second.', compute: (c) => ({ value: fixed(c.m.speedMps, 2), unit: 'm/s' }) },
-  speedKmh: { label: 'Speed', description: 'Speed in kilometres per hour.', compute: (c) => ({ value: fixed(c.m.speedMps * 3.6, 1), unit: 'km/h' }) },
-  projectedFinish: { label: 'Proj. finish', description: 'Projected finish time at your current average.', compute: projectedFinish },
+  projectedFinish: { label: 'Proj. finish', description: 'Projected finish at your current average: time for a distance piece, distance for a time piece.', compute: projectedFinish },
   projectedDistance: { label: 'Proj. distance', description: 'Projected distance at your current average.', compute: projectedDistance },
+  restLeft: { label: 'Rest left', description: 'Time left in the current rest.', compute: (c) => ({ value: c.m.restTimeRemainingMs > 0 ? clock(c.m.restTimeRemainingMs) : DASH }) },
+  interval: { label: 'Interval', description: 'Current interval number, with the total when the plan fixes it.', compute: interval },
   wattsPerKg: {
     label: 'W/kg',
     description: 'Power to weight (needs your weight in the profile).',

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FlatList, Pressable, View } from 'react-native';
 
 import { analyzeForceCurve, analyzeForceSession, describeFlag, describeShape, idealForceCurve } from '@/analysis';
 import type { ForceCurveShape, TechniqueFlag, WorkoutRecord } from '@/core/types';
@@ -11,6 +11,8 @@ import { Card, EmptyState, SectionTitle, Text } from '@/ui/kit';
 import { radius, spacing, useTheme } from '@/ui/theme';
 
 import { Badge, InsightList, StatGrid } from './ui';
+
+const CHIP_W = 44;
 
 export function ForceSection({ record }: { record: WorkoutRecord }) {
   const t = useTheme();
@@ -24,6 +26,11 @@ export function ForceSection({ record }: { record: WorkoutRecord }) {
   const [sel, setSel] = useState(0);
   const idx = Math.min(sel, Math.max(0, curved.length - 1));
   const stroke = curved[idx];
+  const strokeListRef = useRef<FlatList<(typeof curved)[number]>>(null);
+  useEffect(() => {
+    // Keep the selected stroke's chip on screen when it is changed by the chevrons or the score chart.
+    strokeListRef.current?.scrollToIndex({ index: idx, viewPosition: 0.5, animated: true });
+  }, [idx]);
   const strokeAnalysis = useMemo(
     () =>
       stroke
@@ -206,6 +213,36 @@ export function ForceSection({ record }: { record: WorkoutRecord }) {
             }>
             {`Stroke ${stroke.strokeNumber} · ${formatDuration(stroke.elapsedMs, { tenths: false })}`}
           </SectionTitle>
+          <FlatList
+            ref={strokeListRef}
+            horizontal
+            data={curved}
+            keyExtractor={(s, i) => `${s.strokeNumber}-${i}`}
+            showsHorizontalScrollIndicator={false}
+            initialNumToRender={20}
+            getItemLayout={(_, i) => ({ length: CHIP_W + spacing.xs, offset: (CHIP_W + spacing.xs) * i, index: i })}
+            contentContainerStyle={{ gap: spacing.xs }}
+            renderItem={({ item, index }) => (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Stroke ${item.strokeNumber}`}
+                accessibilityState={{ selected: index === idx }}
+                onPress={() => setSel(index)}
+                style={{
+                  width: CHIP_W,
+                  paddingVertical: 6,
+                  alignItems: 'center',
+                  borderRadius: radius.pill,
+                  borderWidth: 2,
+                  borderColor: index === idx ? t.accent : 'transparent',
+                  backgroundColor: t.surfaceAlt,
+                }}>
+                <Text size="sm" weight="700">
+                  {item.strokeNumber}
+                </Text>
+              </Pressable>
+            )}
+          />
           <ForceCurveChart curves={strokeCurves} unit={unit} height={170} />
           <Text size="sm" tone="dim">
             {formatPace(stroke.paceMsPer500, record.machineType)} {paceUnit(record.machineType)} · {stroke.strokeRate.toFixed(0)} spm · {stroke.watts.toFixed(0)} W · drive{' '}

@@ -207,7 +207,7 @@ export default function LivePagesScreen() {
         <SectionTitle>Add tiles</SectionTitle>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
           {unused.map((k: MetricKey) => (
-            <Chip key={k} label={`+ ${k === "speed" ? "Speed m/s" : k === "speedKmh" ? "Speed km/h" : METRICS[k].label}`} onPress={() => patch({ tiles: [...page.tiles, k] })} />
+            <Chip key={k} label={`+ ${METRICS[k].label}`} onPress={() => patch({ tiles: [...page.tiles, k] })} />
           ))}
         </View>
         <SectionTitle>{`Graphs (up to 2, ${page.graphs.length} chosen)`}</SectionTitle>
