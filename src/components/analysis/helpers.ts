@@ -299,44 +299,6 @@ export function solveTimeDistancePace(target: SolveKey, timeMs: number, distance
   return timeMs > 0 && distanceM > 0 ? (timeMs / distanceM) * 500 : NaN;
 }
 
-/* ───────────── Dashboard tile names ───────────── */
-
-export const METRIC_NAMES: Record<MetricKey, { name: string; hint: string }> = {
-  pace: { name: 'Pace', hint: 'Current /500m split' },
-  avgPace: { name: 'Average pace', hint: 'Workout average /500m' },
-  splitPace: { name: 'Split pace', hint: 'Average of the split in progress' },
-  watts: { name: 'Watts', hint: 'Power of the last stroke' },
-  avgWatts: { name: 'Average watts', hint: 'Workout average power' },
-  strokeRate: { name: 'Stroke rate', hint: 'Strokes per minute' },
-  avgStrokeRate: { name: 'Average rate', hint: 'Workout average spm' },
-  heartRate: { name: 'Heart rate', hint: 'From PM or HR strap' },
-  hrZone: { name: 'HR zone', hint: 'Zone 1-5 from your profile' },
-  elapsed: { name: 'Elapsed time', hint: 'Workout clock' },
-  distance: { name: 'Distance', hint: 'Metres rowed' },
-  remaining: { name: 'Piece', hint: 'Distance on distance pieces, time on time pieces' },
-  calories: { name: 'Calories', hint: 'Total kcal' },
-  calPerHour: { name: 'Cal/hour', hint: 'Current kcal/h' },
-  dragFactor: { name: 'Drag factor', hint: 'Flywheel resistance' },
-  driveLength: { name: 'Drive length', hint: 'Handle travel per stroke' },
-  driveTime: { name: 'Drive time', hint: 'Duration of the drive' },
-  recoveryTime: { name: 'Recovery time', hint: 'Duration of the recovery' },
-  driveRecoveryRatio: { name: 'Drive : recovery', hint: 'Rhythm ratio' },
-  strokeDistance: { name: 'Distance / stroke', hint: 'Metres per stroke' },
-  peakForce: { name: 'Peak force', hint: 'Highest handle force' },
-  avgForce: { name: 'Average force', hint: 'Mean force over the drive' },
-  workPerStroke: { name: 'Work / stroke', hint: 'Joules per stroke' },
-  strokeCount: { name: 'Stroke count', hint: 'Strokes so far' },
-  speed: { name: 'Speed (m/s)', hint: 'Metres per second' },
-  speedKmh: { name: 'Speed (km/h)', hint: 'Kilometres per hour' },
-  projectedFinish: { name: 'Projected finish', hint: 'Finish time (distance piece) or distance (time piece)' },
-  projectedDistance: { name: 'Projected distance', hint: 'Final distance at current pace' },
-  wattsPerKg: { name: 'Watts / kg', hint: 'Needs your weight' },
-  paceBoatGap: { name: 'Pace boat gap', hint: 'Ahead / behind the target' },
-  strokeScore: { name: 'Stroke score', hint: 'Force-curve quality 0-100' },
-};
-
-export const ALL_METRIC_KEYS = Object.keys(METRIC_NAMES) as MetricKey[];
-
 export function moveItem<T>(list: readonly T[], from: number, to: number): T[] {
   if (from < 0 || from >= list.length || to < 0 || to >= list.length || from === to) return list.slice();
   const out = list.slice();
