@@ -93,6 +93,7 @@ export function Card({
   const base: ViewStyle = {
     backgroundColor: t.surface,
     borderRadius: radius.md,
+    borderCurve: 'continuous',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: t.border,
     padding: spacing.lg,
@@ -155,6 +156,7 @@ export function Button({
         {
           backgroundColor: bg,
           borderRadius: radius.md,
+          borderCurve: 'continuous',
           paddingVertical: small ? spacing.sm : spacing.md + 2,
           paddingHorizontal: small ? spacing.md : spacing.lg,
           alignItems: 'center',
@@ -235,6 +237,7 @@ export function Chip({
         paddingHorizontal: spacing.md,
         paddingVertical: 6,
         borderRadius: radius.pill,
+        borderCurve: 'continuous',
         borderWidth: 1,
         borderColor: selected ? c : t.border,
         backgroundColor: selected ? c + '26' : 'transparent',
