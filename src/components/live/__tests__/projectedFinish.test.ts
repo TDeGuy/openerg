@@ -11,9 +11,7 @@ describe('projected finish', () => {
     expect(finish({ workoutType: 'fixed-distance-no-splits', workoutDistanceM: 2000 }).value).toBe('8:00');
   });
 
-  it('shows a distance for a time piece set on the PM, with no app plan', () => {
-    const v = finish({ workoutType: 'fixed-time-no-splits', workoutDurationMs: 600_000 });
-    expect(v.value).toBe('2,500');
-    expect(v.unit).toBe('m');
+  it('shows a dash for a time piece, which has no finish time', () => {
+    expect(finish({ workoutType: 'fixed-time-no-splits', workoutDurationMs: 600_000 }).value).toBe('–');
   });
 });
