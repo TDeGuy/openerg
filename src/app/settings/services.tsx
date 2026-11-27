@@ -26,7 +26,7 @@ const STEPS: Record<UploadService, string[]> = {
     '3. Copy the Client ID and Client Secret into the fields above, then tap Connect.',
   ],
   concept2: [
-    '1. Register an application in the developer portal at log.concept2.com/developers. It starts on log-dev.concept2.com until Concept2 approves production.',
+    '1. Create an API client at log.concept2.com/developers/keys (sign in with your Logbook account). Write apps start on log-dev.concept2.com until Concept2 approves production.',
     `2. Register this redirect URI: ${C2_REDIRECT}`,
     '3. Copy the Client ID and Client Secret into the fields above, pick Development or Production, then tap Connect.',
     'Development uses a separate account on log-dev.concept2.com; results there do not appear in your real logbook.',
