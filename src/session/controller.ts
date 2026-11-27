@@ -110,7 +110,8 @@ export class SessionController {
   private finalizing: Promise<string | null> | null = null;
   private savedId: string | null = null;
   /** Built record whose save failed; kept (with the crash snapshot) until it saves or is discarded. */
-  private pendingRecord: WorkoutRecord | null = null;
+  /** Finished workouts that failed to save; kept until saved or discarded. */
+  private failedSaves: WorkoutRecord[] = [];
   private endTimer: ReturnType<typeof setTimeout> | null = null;
   private endWaiter: (() => void) | null = null;
   private suppressAutoArm = false;
@@ -344,9 +345,8 @@ export class SessionController {
     this.clearEndTimer();
     this.pmWorked = pmWorked;
     this.stopCox();
-    this.pendingRecord = null;
     if (!adopting) this.muted = false;
-    useSessionExtras.setState({ muted: this.muted, saveFailed: false });
+    useSessionExtras.setState({ muted: this.muted, saveFailed: this.failedSaves.length > 0 });
     const device = this.store.getState().connection.device;
     this.recorder = new WorkoutRecorder({
       plan,
@@ -443,7 +443,7 @@ export class SessionController {
 
   private disarm() {
     void clearSnapshot();
-    this.pendingRecord = null;
+    this.failedSaves = [];
     useSessionExtras.setState({ saveFailed: false });
     this.clearEndTimer();
     this.stopCox();
@@ -486,11 +486,11 @@ export class SessionController {
         const record = rec.build({ title: titler });
         const res = await persistRecord(record, saveWorkout);
         id = res.id;
-        this.pendingRecord = res.pending;
+        if (res.pending) this.failedSaves.push(res.pending);
         if (id) this.onSaved(record);
       }
-      if (!this.pendingRecord) void clearSnapshot(); // a failed save keeps the crash snapshot
-      useSessionExtras.setState({ saveFailed: !!this.pendingRecord });
+      if (!this.failedSaves.length) void clearSnapshot(); // a failed save keeps the crash snapshot
+      useSessionExtras.setState({ saveFailed: this.failedSaves.length > 0 });
       this.savedId = id;
       this.set({ phase: 'finished', paceBoat: null, lastSavedWorkoutId: id });
       return id;
@@ -502,20 +502,23 @@ export class SessionController {
     void autoUpload(record).catch((e) => console.warn('[session] auto upload failed', e));
   }
 
-  /** Retry saving the kept record; resolves to its id, or null if it failed again. */
+  /** Retries the failed saves; resolves to the id of the last one saved, or null if any still fail. */
   async retrySave(): Promise<string | null> {
-    const rec = this.recorder;
-    if (!this.pendingRecord || !rec) return this.savedId;
-    const record = rec.build({ title: titler });
-    const res = await persistRecord(record, saveWorkout);
-    this.pendingRecord = res.pending;
-    useSessionExtras.setState({ saveFailed: !!res.pending });
-    if (!res.id) return null;
-    this.savedId = res.id;
-    void clearSnapshot();
-    this.onSaved(record);
-    this.set({ lastSavedWorkoutId: res.id });
-    return res.id;
+    if (!this.failedSaves.length) return this.savedId;
+    let id: string | null = null;
+    for (const record of this.failedSaves.splice(0)) {
+      const res = await persistRecord(record, saveWorkout);
+      if (res.pending) this.failedSaves.push(res.pending);
+      else {
+        id = record.id;
+        this.savedId = id;
+        this.onSaved(record);
+      }
+    }
+    useSessionExtras.setState({ saveFailed: this.failedSaves.length > 0 });
+    if (!this.failedSaves.length) void clearSnapshot();
+    if (id) this.set({ lastSavedWorkoutId: id });
+    return this.failedSaves.length ? null : id;
   }
 
   /** Late data (split after workoutEnd) updates the already-saved record. */

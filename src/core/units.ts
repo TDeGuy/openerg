@@ -41,7 +41,7 @@ export function convertForce(newtons: number, unit: 'N' | 'kgf' | 'lbf'): number
   return newtons;
 }
 
-function pad2(n: number): string {
+export function pad2(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
 }
 

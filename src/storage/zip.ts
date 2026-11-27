@@ -10,13 +10,20 @@ const crc32 = (b: Uint8Array) => {
   return (c ^ 0xffffffff) >>> 0;
 };
 
-export function zipStore(files: { name: string; text: string }[]): Uint8Array {
+const u32 = (dv: DataView, o: number, v: number) => dv.setUint32(o, v, true);
+
+/**
+ * Writes the archive piece by piece through `write`. Entries may come from a generator, so only one
+ * entry's text is in memory at a time; the central directory (small) is kept until the end.
+ */
+export async function zipWrite(
+  entries: AsyncIterable<{ name: string; text: string }> | Iterable<{ name: string; text: string }>,
+  write: (bytes: Uint8Array) => void,
+): Promise<void> {
   const enc = new TextEncoder();
-  const parts: Uint8Array[] = [];
   const central: Uint8Array[] = [];
   let offset = 0;
-  const u32 = (dv: DataView, o: number, v: number) => dv.setUint32(o, v, true);
-  for (const f of files) {
+  for await (const f of entries) {
     const name = enc.encode(f.name);
     const data = enc.encode(f.text);
     const crc = crc32(data);
@@ -31,16 +38,14 @@ export function zipStore(files: { name: string; text: string }[]): Uint8Array {
     u32(c, 16, crc); u32(c, 20, data.length); u32(c, 24, data.length); c.setUint16(28, name.length, true); u32(c, 42, offset);
     cd.set(name, 46);
     central.push(cd);
-    parts.push(head, data);
+    write(head);
+    write(data);
     offset += head.length + data.length;
   }
-  const cdSize = central.reduce((a, b) => a + b.length, 0);
+  for (const cd of central) write(cd);
   const end = new Uint8Array(22);
   const e = new DataView(end.buffer);
-  u32(e, 0, 0x06054b50); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); u32(e, 12, cdSize); u32(e, 16, offset);
-  const all = [...parts, ...central, end];
-  const out = new Uint8Array(offset + cdSize + 22);
-  let p = 0;
-  for (const a of all) { out.set(a, p); p += a.length; }
-  return out;
+  u32(e, 0, 0x06054b50); e.setUint16(8, central.length, true); e.setUint16(10, central.length, true);
+  u32(e, 12, central.reduce((a, b) => a + b.length, 0)); u32(e, 16, offset);
+  write(end);
 }

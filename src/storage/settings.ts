@@ -21,8 +21,10 @@ interface SettingsStore {
 
 let writeTimer: ReturnType<typeof setTimeout> | null = null;
 let loadPromise: Promise<void> | null = null;
-/** Set once the user changes anything, so a slow load() never clobbers fresh edits. */
-let dirtyBeforeLoad = false;
+/** Edits made before the stored settings were read; replayed on top of them. */
+let pendingEdits: Partial<AppSettings>[] = [];
+/** Until the stored settings are read, nothing is written: defaults must never overwrite them. */
+let readDone = false;
 
 function scheduleWrite(): void {
   if (writeTimer) clearTimeout(writeTimer);
@@ -34,6 +36,7 @@ function scheduleWrite(): void {
 
 /** Writes the current settings immediately (also used by backup restore). */
 export async function flushSettings(): Promise<void> {
+  if (!readDone) return;
   if (writeTimer) {
     clearTimeout(writeTimer);
     writeTimer = null;
@@ -50,28 +53,28 @@ export const useSettings = create<SettingsStore>()((set, get) => ({
   loaded: false,
 
   load() {
-    if (loadPromise) return loadPromise;
-    loadPromise = (async () => {
-      try {
-        // Never let a stuck backend block the root layout.
-        const raw = await Promise.race([
-          kv.getItem(SETTINGS_KEY),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
-        ]);
-        if (raw && !dirtyBeforeLoad) {
-          set({ settings: mergeSettings(JSON.parse(raw)) });
-        }
-      } catch {
-        // corrupt / unavailable storage → defaults
-      } finally {
-        set({ loaded: true });
-      }
+    loadPromise ??= (async () => {
+      const read = kv
+        .getItem(SETTINGS_KEY)
+        .then((raw) => {
+          const stored = raw ? mergeSettings(JSON.parse(raw)) : get().settings;
+          set({ settings: pendingEdits.reduce<AppSettings>((cur, p) => mergeSettings({ ...cur, ...p }), stored) });
+        })
+        .catch(() => undefined) // corrupt or unavailable storage: keep defaults
+        .finally(() => {
+          readDone = true;
+          if (pendingEdits.length) scheduleWrite();
+          pendingEdits = [];
+        });
+      // The 4 s cap only stops the root layout waiting; the read still lands later.
+      await Promise.race([read, new Promise((resolve) => setTimeout(resolve, 4000))]);
+      set({ loaded: true });
     })();
     return loadPromise;
   },
 
   update(patch) {
-    if (!get().loaded) dirtyBeforeLoad = true;
+    if (!readDone) pendingEdits.push(patch);
     set({ settings: mergeSettings({ ...get().settings, ...patch }) });
     scheduleWrite();
   },

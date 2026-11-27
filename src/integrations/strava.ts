@@ -8,9 +8,10 @@ export const STRAVA_REDIRECT = 'openerg://oauth/strava';
 export const STRAVA_CALLBACK_DOMAIN = 'oauth';
 const API = 'https://www.strava.com';
 
-export function stravaAuthUrl(clientId: string): string {
+export function stravaAuthUrl(clientId: string, state: string): string {
   return `${API}/oauth/authorize?${formBody({
     client_id: clientId,
+    state,
     redirect_uri: STRAVA_REDIRECT,
     response_type: 'code',
     approval_prompt: 'auto',
@@ -89,6 +90,9 @@ export async function stravaUpload(
     await sleep(1500);
     const r = await fetch(`${API}/api/v3/uploads/${id}`, { headers: auth });
     const j = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+    // A repeat of an upload that did reach Strava (same external_id) is reported with the earlier activity id.
+    const dup = /duplicate of activity (\d+)/.exec(String(j.error ?? ''));
+    if (dup) return dup[1]!;
     if (j.error) throw new Error(describe(j));
     if (j.activity_id) return String(j.activity_id);
     if (!r.ok) throw new Error(`Strava status check failed (${r.status}).`);

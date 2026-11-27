@@ -137,7 +137,6 @@ export class Coxswain {
   private book: PhraseBook;
   private scheduler: CallScheduler;
   private listeners = new Set<(call: CoxCall) => void>();
-  private history: CoxCall[] = [];
 
   private now = 0;
   private lastM: LiveMetrics | null = null;
@@ -211,7 +210,6 @@ export class Coxswain {
     this.rng = opts.rng ?? mulberry32(opts.seed ?? 1);
     this.book = new PhraseBook(opts.settings.personality, this.rng);
     this.scheduler = new CallScheduler(opts.settings, (call) => {
-      this.history.push(call);
       for (const cb of [...this.listeners]) cb(call);
     });
   }
@@ -239,10 +237,6 @@ export class Coxswain {
     if (settings.personality !== this.book.personality) this.book = new PhraseBook(settings.personality, this.rng);
   }
 
-  /** All calls emitted so far. */
-  get calls(): CoxCall[] {
-    return [...this.history];
-  }
 
   onMetrics(m: LiveMetrics): void {
     this.now = m.elapsedMs;

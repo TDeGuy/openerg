@@ -1,5 +1,6 @@
 /** Concept2 Logbook: OAuth + result upload (https://log.concept2.com/developers/documentation). */
 import type { AthleteProfile, PmWorkoutType, SplitSummary, WorkoutRecord } from '@/core/types';
+import { pad2 } from '@/core/units';
 import { formBody, postForm, type Tokens } from './oauth';
 
 export type C2Env = 'dev' | 'production';
@@ -8,8 +9,8 @@ export const C2_REDIRECT = 'openerg:///oauth/concept2';
 const SCOPE = 'results:write';
 const HOST: Record<C2Env, string> = { production: 'https://log.concept2.com', dev: 'https://log-dev.concept2.com' };
 
-export function c2AuthUrl(env: C2Env, clientId: string): string {
-  return `${HOST[env]}/oauth/authorize?${formBody({ client_id: clientId, scope: SCOPE, response_type: 'code', redirect_uri: C2_REDIRECT })}`;
+export function c2AuthUrl(env: C2Env, clientId: string, state: string): string {
+  return `${HOST[env]}/oauth/authorize?${formBody({ client_id: clientId, scope: SCOPE, response_type: 'code', redirect_uri: C2_REDIRECT, state })}`;
 }
 
 function toTokens(j: Record<string, unknown>, now: number): Tokens {
@@ -51,12 +52,11 @@ const WORKOUT_TYPE: Record<PmWorkoutType, string> = {
 
 const MACHINE = { rower: 'rower', skierg: 'skierg', bikeerg: 'bike' } as const;
 const tenths = (ms: number) => Math.max(0, Math.round(ms / 100));
-const pad = (n: number) => String(n).padStart(2, '0');
 
 /** "yyyy-mm-dd hh:mm:ss" in the phone's local time (sent together with `timezone`). */
 export function c2Date(ms: number): string {
   const d = new Date(ms);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 
 /** Concept2 lightweight limits: men 75 kg, women 61.5 kg. Unknown profile defaults to heavyweight. */
