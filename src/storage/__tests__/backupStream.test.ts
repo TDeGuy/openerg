@@ -77,13 +77,13 @@ describe('upload ledger cleanup', () => {
     useIntegrations.setState({ loaded: false, uploads: {} });
   });
   it('removes deleted workouts and keeps the rest', async () => {
-    useIntegrations.getState().patch({ uploads: { a: { strava: { state: 'done', at: 1 } }, b: { concept2: { state: 'done', at: 1 } }, c: {} } });
+    useIntegrations.getState().patch({ uploads: { a: { concept2: { state: 'done', at: 1 } }, b: { concept2: { state: 'done', at: 1 } }, c: {} } });
     await forgetUploads(['a', 'c']);
     expect(Object.keys(useIntegrations.getState().uploads)).toEqual(['b']);
     expect(JSON.parse(store.get('openerg.integrations.v1')!).uploads).toHaveProperty('b');
   });
   it('clears everything for delete-all', async () => {
-    useIntegrations.getState().patch({ uploads: { a: {} , b: { strava: { state: 'done', at: 1 } } } });
+    useIntegrations.getState().patch({ uploads: { a: {} , b: { concept2: { state: 'done', at: 1 } } } });
     await forgetUploads();
     expect(useIntegrations.getState().uploads).toEqual({});
   });

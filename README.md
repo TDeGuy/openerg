@@ -91,17 +91,17 @@ phone with a real PM5. Things to check first on a real erg:
 
 Confirmed on a real PM5 by the owner: the force curve and screen-orientation locking.
 
-Not included: online real-time racing, direct Strava / Concept2 Logbook upload, Apple Health
+Not included: online real-time racing, direct Strava upload (Strava gets workouts through the Concept2 Logbook link), Apple Health
 and Health Connect sync.
 
-## Uploads (Strava and Concept2 Logbook)
+## Uploads (Concept2 Logbook)
 
-Each service needs an API application you register yourself; no keys ship with the app. Open Settings > Connected services, type the client ID and secret, tap Connect. Credentials and tokens stay in app-private storage on the phone and are not part of backups.
+The Concept2 API client is one you create yourself; no keys ship with the app. Open Settings > Connected services, type the client ID and secret, tap Connect. Credentials and tokens stay in app-private storage on the phone and are not part of backups.
 
-- Strava: create an app at strava.com/settings/api and set Authorization Callback Domain to `oauth` (the app redirects to `openerg://oauth/strava`). Scope: `activity:write`.
-- Concept2: register an app in the developer portal at log.concept2.com/developers and register the redirect URI `openerg:///oauth/concept2` (three slashes). New apps work on the dev server (log-dev.concept2.com, separate data) until Concept2 approves production; switch Development/Production in the app.
+- Concept2: create an API client at log.concept2.com/developers/keys (sign in with your Logbook account) and register the redirect URI `openerg:///oauth/concept2` (three slashes). Write apps start on log-dev.concept2.com (separate data) until Concept2 approves production; switch Development/Production in the app.
+- Strava: turn on the Strava link in your Concept2 Logbook settings. The Logbook then forwards uploaded results to Strava.
 
-Per service choose Ask each time (default), Always upload or Never. Saved workouts also have an Upload card on the detail screen, with status and Retry. A workout is never uploaded twice to the same service.
+Choose Ask each time (default), Always upload or Never. Saved workouts also have an Upload card on the detail screen, with status and Retry. A workout is never uploaded twice to the same service.
 
 ## Licence
 

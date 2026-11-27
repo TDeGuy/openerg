@@ -60,7 +60,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     'quick-single-time-1800000',
     'quick-single-time-3600000',
   ],
-  uploads: { strava: 'ask', concept2: 'ask' },
+  uploads: { concept2: 'ask' },
 };
 
 export function emptyMetrics(): LiveMetrics {

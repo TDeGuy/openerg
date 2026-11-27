@@ -46,7 +46,7 @@ export default function SettingsScreen() {
           hint={`${settings.livePages.length} page${settings.livePages.length === 1 ? '' : 's'}`}
           icon="grid-outline" onPress={() => router.push('/settings/dashboard')} />
         <Divider />
-        <NavRow label="Connected services" hint="Strava, Concept2 Logbook" icon="cloud-upload-outline" onPress={() => router.push('/settings/services')} />
+        <NavRow label="Connected services" hint="Concept2 Logbook" icon="cloud-upload-outline" onPress={() => router.push('/settings/services')} />
         <Divider />
         <NavRow label="Data & backup" hint="Backup, restore, delete" icon="server-outline" onPress={() => router.push('/settings/data')} />
       </Card>
