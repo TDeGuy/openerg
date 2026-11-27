@@ -328,7 +328,7 @@ export const METRIC_NAMES: Record<MetricKey, { name: string; hint: string }> = {
   strokeCount: { name: 'Stroke count', hint: 'Strokes so far' },
   speed: { name: 'Speed (m/s)', hint: 'Metres per second' },
   speedKmh: { name: 'Speed (km/h)', hint: 'Kilometres per hour' },
-  projectedFinish: { name: 'Projected finish', hint: 'Finish time at current pace' },
+  projectedFinish: { name: 'Projected finish', hint: 'Finish time (distance piece) or distance (time piece)' },
   projectedDistance: { name: 'Projected distance', hint: 'Final distance at current pace' },
   wattsPerKg: { name: 'Watts / kg', hint: 'Needs your weight' },
   paceBoatGap: { name: 'Pace boat gap', hint: 'Ahead / behind the target' },
