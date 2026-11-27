@@ -2,6 +2,7 @@
 import type {
   CoxCall,
   HeartRatePoint,
+  IntervalDef,
   LiveMetrics,
   MachineType,
   PmWorkoutSummary,
@@ -37,6 +38,30 @@ function workoutTypeForPlan(plan: WorkoutPlan | null): PmWorkoutType {
     case 'just-row': return 'just-row-splits';
     default: return 'unknown';
   }
+}
+
+/**
+ * Intervals programmed on the PM itself have no app plan. Rebuild them from the reps the PM reported,
+ * so the review shows the piece the erg actually rowed. Null when the PM did not report interval reps.
+ */
+export function planFromSplits(workoutType: PmWorkoutType, splits: SplitSummary[]): WorkoutPlan | null {
+  if (!workoutType.includes('interval')) return null;
+  const intervals: IntervalDef[] = [];
+  for (const s of splits) {
+    const rest = s.type === 'rest' || s.type === 'rest-undefined';
+    if (rest) {
+      const last = intervals[intervals.length - 1];
+      if (last) last.restMs += s.restTimeMs || s.splitTimeMs;
+      continue;
+    }
+    const kind = s.type.startsWith('distance') ? 'distance' : s.type.startsWith('time') ? 'time' : null;
+    if (!kind) continue;
+    const value = kind === 'distance' ? s.splitDistanceM : s.splitTimeMs;
+    if (!(value > 0)) continue;
+    intervals.push({ type: kind, value, restMs: 0, ...(s.type.endsWith('rest-undefined') ? { undefinedRest: true } : {}) });
+  }
+  if (!intervals.length) return null;
+  return { id: 'pm5', name: 'PM5 workout', kind: 'intervals', intervals };
 }
 
 export interface RecorderInit {
@@ -212,7 +237,7 @@ export class WorkoutRecorder {
   build(opts: { title?: TitleFn; endedAt?: number } = {}): WorkoutRecord {
     const t = this.totals();
     const splits = this.splits;
-    const plan = this.init.plan;
+    const plan = this.init.plan ?? planFromSplits(t.workoutType, splits);
     let title: string;
     try {
       title = (opts.title ?? fallbackTitle)({ plan, workoutType: t.workoutType, distanceM: t.distanceM, elapsedMs: t.elapsedMs, splits });
