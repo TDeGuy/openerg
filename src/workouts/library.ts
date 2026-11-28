@@ -30,27 +30,27 @@ function rateSegs(stepMs: number, rates: number[]): PlanSegment[] {
 
 export const BUILT_IN_WORKOUTS: WorkoutPlan[] = [
   /* ── tests ── */
-  dist('100m', '100m sprint', 100, 'test', 'All-out 100m. Explosive start, hold the rate high (40+) and never back off — it is over in about 20 seconds.'),
-  dist('500m', '500m test', 500, 'test', 'Flat-out 500m. Fast start, settle for only a few strokes around 250m, then sprint the last 150m. Expect to fade slightly; that is normal.', { splitValue: 100 }),
+  dist('100m', '100m', 100, 'test', 'All-out 100m. Explosive start, hold the rate high (40+) and never back off — it is over in about 20 seconds.'),
+  dist('500m', '500m', 500, 'test', 'Flat-out 500m. Fast start, settle for only a few strokes around 250m, then sprint the last 150m. Expect to fade slightly; that is normal.', { splitValue: 100 }),
   dist('1k', '1000m test', 1000, 'test', 'One-kilometre test. Hard first 200m, settle at about two seconds slower than your 500m pace, and build from 600m.', { splitValue: 250 }),
-  dist('2k', '2000m test', 2000, 'test', 'The benchmark erg test. Fast start for ~15 strokes, settle a touch above goal pace, hold through the third 500 (the hard one), and sprint from 1750m. Add a pace plan in the builder to get a pace boat.', { splitValue: 500 }),
-  dist('5k', '5000m test', 5000, 'test', 'Aerobic power test. Start controlled — no faster than 2k pace + 6s — hold even splits and lift the last 1000m.', { splitValue: 1000 }),
-  dist('6k', '6000m test', 6000, 'test', 'The classic endurance test. Even pacing around 2k pace + 8–10s at rate 26–30, then empty it over the last 1000m.', { splitValue: 1000 }),
+  dist('2k', '2000m', 2000, 'test', 'The benchmark erg test. Fast start for ~15 strokes, settle a touch above goal pace, hold through the third 500 (the hard one), and sprint from 1750m. Add a pace plan in the builder to get a pace boat.', { splitValue: 500 }),
+  dist('5k', '5000m', 5000, 'test', 'Aerobic power test. Start controlled — no faster than 2k pace + 6s — hold even splits and lift the last 1000m.', { splitValue: 1000 }),
+  dist('6k', '6000m', 6000, 'test', 'The classic endurance test. Even pacing around 2k pace + 8–10s at rate 26–30, then empty it over the last 1000m.', { splitValue: 1000 }),
   dist('10k', '10,000m', 10000, 'test', 'Long aerobic test. Settle into a sustainable rhythm (rate 24–28), even splits, and only push in the final 2k.', { splitValue: 1000 }),
-  dist('hm', 'Half marathon', 21097, 'test', 'Half marathon (21,097m). Pace it like a long steady state at the top of UT1, fuel and hydrate, negative split if you can.', { splitValue: 1000 }),
-  dist('fm', 'Marathon', 42195, 'test', 'Full marathon (42,195m). Start conservatively, rate 20–24, eat and drink every 30 minutes, hold form when it gets tough.', { splitValue: 2000 }),
+  dist('hm', '21097m', 21097, 'test', 'Half marathon (21,097m). Pace it like a long steady state at the top of UT1, fuel and hydrate, negative split if you can.', { splitValue: 1000 }),
+  dist('fm', '42195m', 42195, 'test', 'Full marathon (42,195m). Start conservatively, rate 20–24, eat and drink every 30 minutes, hold form when it gets tough.', { splitValue: 2000 }),
   // Timed pieces default to training coxing (the user does not row them as tests).
-  time('1min', '1:00 test', 1 * MIN, 'test', 'One minute all-out for maximum metres. Aggressive start, hang on through the last 20 seconds.', { splitValue: 20 * S, cox: TRAINING }),
-  time('4min', '4:00 test', 4 * MIN, 'test', 'Four minutes for maximum distance — a VO2max benchmark. Pace it like a 1k: quick start, settle, sprint the final minute.', { splitValue: MIN, cox: TRAINING }),
+  time('1min', '1:00', 1 * MIN, 'test', 'One minute all-out for maximum metres. Aggressive start, hang on through the last 20 seconds.', { splitValue: 20 * S, cox: TRAINING }),
+  time('4min', '4:00', 4 * MIN, 'test', 'Four minutes for maximum distance — a VO2max benchmark. Pace it like a 1k: quick start, settle, sprint the final minute.', { splitValue: MIN, cox: TRAINING }),
   time('30min-r20', '30:00 at r20', 30 * MIN, 'test', 'The classic 30r20: maximum distance in 30 minutes at a capped rate of 20. Long, powerful strokes; the test is power per stroke.', { splitValue: 5 * MIN, target: { strokeRate: 20 }, cox: TRAINING }),
   time('60min', '60:00', 60 * MIN, 'test', 'Maximum metres in one hour. Even pacing around 2k pace + 15–18s, rate 22–26.', { splitValue: 5 * MIN, cox: TRAINING }),
 
   /* ── steady state ── */
-  time('ss-30-ut2', '30:00 UT2', 30 * MIN, 'steady-state', 'Easy aerobic base. Conversational effort (HR zone 1), rate 18–20, focus on long relaxed strokes.', { splitValue: 5 * MIN, target: { strokeRate: 20, hrZone: 1 } }),
-  time('ss-45-ut2', '45:00 UT2', 45 * MIN, 'steady-state', 'Longer UT2 aerobic session at rate 18–20. You should be able to breathe through your nose most of the time.', { splitValue: 5 * MIN, target: { strokeRate: 20, hrZone: 1 } }),
-  time('ss-60-ut1', '60:00 UT1', 60 * MIN, 'steady-state', 'Steady UT1 hour (HR zone 2), rate 20–22. Firmer than UT2 but still sustainable; keep splits even.', { splitValue: 10 * MIN, target: { strokeRate: 22, hrZone: 2 } }),
-  time('ss-90', '90:00 long steady', 90 * MIN, 'steady-state', 'Long aerobic base builder. Very easy pressure, rate 18–20, take a drink every 20 minutes.', { splitValue: 10 * MIN, target: { strokeRate: 19, hrZone: 1 } }),
-  dist('ss-10k', '10k steady', 10000, 'steady-state', '10,000m at a steady UT1 effort, rate 20–22. Even splits; do not race it.', { splitValue: 1000, target: { strokeRate: 22, hrZone: 2 } }),
+  time('ss-30-ut2', '30:00', 30 * MIN, 'steady-state', 'Easy aerobic base. Conversational effort (HR zone 1), rate 18–20, focus on long relaxed strokes.', { splitValue: 5 * MIN, target: { strokeRate: 20, hrZone: 1 } }),
+  time('ss-45-ut2', '45:00', 45 * MIN, 'steady-state', 'Longer UT2 aerobic session at rate 18–20. You should be able to breathe through your nose most of the time.', { splitValue: 5 * MIN, target: { strokeRate: 20, hrZone: 1 } }),
+  time('ss-60-ut1', '60:00', 60 * MIN, 'steady-state', 'Steady UT1 hour (HR zone 2), rate 20–22. Firmer than UT2 but still sustainable; keep splits even.', { splitValue: 10 * MIN, target: { strokeRate: 22, hrZone: 2 } }),
+  time('ss-90', '90:00', 90 * MIN, 'steady-state', 'Long aerobic base builder. Very easy pressure, rate 18–20, take a drink every 20 minutes.', { splitValue: 10 * MIN, target: { strokeRate: 19, hrZone: 1 } }),
+  dist('ss-10k', '10000m', 10000, 'steady-state', '10,000m at a steady UT1 effort, rate 20–22. Even splits; do not race it.', { splitValue: 1000, target: { strokeRate: 22, hrZone: 2 } }),
   intervals('ss-3x20-rates', '3 × 20:00 r20/22/24', [
     { type: 'time', value: 20 * MIN, restMs: 2 * MIN, target: { strokeRate: 20 } },
     { type: 'time', value: 20 * MIN, restMs: 2 * MIN, target: { strokeRate: 22 } },
@@ -92,8 +92,8 @@ export const BUILT_IN_WORKOUTS: WorkoutPlan[] = [
   intervals('ratio-6x5', '6 × 5:00 r20 / 1:00r', reps(6, 'time', 5 * MIN, MIN, { strokeRate: 20 }), 'technique', 'Ratio work: fixed rate 20, push hard on the drive and take your time on the recovery. Watch the split drop as power per stroke rises.'),
 
   /* ── warm-ups ── */
-  time('wu-10', '10:00 easy warm-up', 10 * MIN, 'warmup', 'Gentle ten minutes, rate 18–20, building from arms only to full slide.', { splitValue: 2 * MIN, target: { strokeRate: 20, hrZone: 1 } }),
-  time('wu-5', '5:00 quick warm-up', 5 * MIN, 'warmup', 'Short warm-up before a steady session: easy pressure, rate 20.', { splitValue: MIN, target: { strokeRate: 20 } }),
+  time('wu-10', '10:00', 10 * MIN, 'warmup', 'Gentle ten minutes, rate 18–20, building from arms only to full slide.', { splitValue: 2 * MIN, target: { strokeRate: 20, hrZone: 1 } }),
+  time('wu-5', '5:00', 5 * MIN, 'warmup', 'Short warm-up before a steady session: easy pressure, rate 20.', { splitValue: MIN, target: { strokeRate: 20 } }),
   time('wu-progressive', 'Progressive warm-up 15:00', 15 * MIN, 'warmup', 'Fifteen continuous minutes building rate and pressure: 18, 20, 22, then 24. Ends ready for a hard session.', {
     splitValue: 5 * MIN,
     segments: [{ duration: 5 * MIN, strokeRate: 18 }, { duration: 5 * MIN, strokeRate: 20 }, { duration: 3 * MIN, strokeRate: 22 }, { duration: 2 * MIN, strokeRate: 24 }],

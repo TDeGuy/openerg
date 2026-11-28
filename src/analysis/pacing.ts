@@ -298,9 +298,10 @@ function sec(ms: number): string {
   return `${(Math.abs(ms) / 1000).toFixed(1)} s`;
 }
 
-export function analyzePacing(record: WorkoutRecord): PacingAnalysis {
+/** `count` cuts the piece into that many equal-distance segments (needs strokes); default uses PM splits. */
+export function analyzePacing(record: WorkoutRecord, count?: number): PacingAnalysis {
   const track = strokeTrack(record?.strokes);
-  let segs = segmentsFromSplits(record?.splits);
+  let segs = count ? segmentsFromTrack(track, count) : segmentsFromSplits(record?.splits);
   if (segs.length < 2) {
     const strokeCount = track.length - 1;
     const count = strokeCount >= 16 ? DEFAULT_SEGMENTS : Math.max(1, Math.floor(strokeCount / 2));
