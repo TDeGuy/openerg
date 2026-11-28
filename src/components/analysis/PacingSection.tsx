@@ -19,7 +19,10 @@ export function PacingSection({ record }: { record: WorkoutRecord }) {
   const t = useTheme();
   const fmtPace = useCallback((v: number) => formatPace(v, record.machineType), [record.machineType]);
   const paceTick = useCallback((v: number) => fmtPace(v).replace(/\.\d$/, ''), [fmtPace]);
-  const pacing = useMemo(() => analyzePacing(record), [record]);
+  const [parts, setParts] = useState<'auto' | '4' | '8' | '16'>('auto');
+  const [picked, setPicked] = useState<number | null>(null);
+  const pacing = useMemo(() => analyzePacing(record, parts === 'auto' ? undefined : Number(parts)), [record, parts]);
+  const seg = picked != null ? pacing.segments[picked] : undefined;
   const intervals = useMemo(() => analyzeIntervals(record), [record]);
   const plan = useMemo(() => planTargetSeries(record.plan, record), [record]);
   const profile = useMemo(() => describePacingProfile(pacing.profile), [pacing.profile]);
@@ -125,19 +128,45 @@ export function PacingSection({ record }: { record: WorkoutRecord }) {
               ]}
             />
           ) : null}
+          <Segmented
+            value={parts}
+            onChange={(v) => {
+              setParts(v);
+              setPicked(null);
+            }}
+            options={[
+              { value: 'auto', label: 'Auto' },
+              { value: '4', label: '4 parts' },
+              { value: '8', label: '8 parts' },
+              { value: '16', label: '16 parts' },
+            ]}
+          />
           <BarChart
             bars={bars}
             format={(v) => formatDelta(v)}
             reference={{ value: 0 }}
             invert
+            onPressBar={setPicked}
             describe={(i) => {
               const s = pacing.segments[i];
               return `${formatPace(s.avgPaceMsPer500, record.machineType)} · ${s.avgStrokeRate.toFixed(0)} spm · ${formatDistance(s.endM - s.startM)}`;
             }}
           />
           <Text size="xs" tone="faint">
-            Pace delta per segment {barMode === 'plan' ? 'versus plan' : 'versus your average'}; green is faster.
+            Pace delta per segment {barMode === 'plan' ? 'versus plan' : 'versus your average'}; green is faster. Tap a bar to select a segment.
           </Text>
+          {seg ? (
+            <StatGrid
+              items={[
+                { label: `Segment ${seg.index + 1}`, value: formatDistance(seg.endM - seg.startM) },
+                { label: 'Time', value: formatDuration(seg.endMs - seg.startMs) },
+                { label: 'Pace', value: formatPace(seg.avgPaceMsPer500, record.machineType), tone: 'accent' },
+                { label: 'vs average', value: formatDelta(seg.deltaVsAvgMs), tone: seg.deltaVsAvgMs <= 0 ? 'good' : 'bad' },
+                { label: 'Rate', value: `${seg.avgStrokeRate.toFixed(0)} spm` },
+                { label: 'HR', value: seg.avgHeartRate ? `${seg.avgHeartRate.toFixed(0)} bpm` : '–' },
+              ]}
+            />
+          ) : null}
         </Card>
       ) : null}
 

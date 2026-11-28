@@ -63,18 +63,9 @@ export default function TrendsScreen() {
     [points, period, t.rate],
   );
   const perfSeries = useMemo<LineSeries[]>(() => {
+    // Watts are a fixed function of pace (2.80 / pace³), so a second line would only repeat this one.
     const active = points.filter((p) => p.sessions > 0 && p.avgPaceMsPer500 > 0);
-    return [
-      { key: 'pace', label: 'Avg pace', points: active.map((p) => ({ x: p.periodStart, y: p.avgPaceMsPer500 })), color: t.pace, format: fmtPace },
-      {
-        key: 'watts',
-        label: 'Avg watts',
-        axis: 'right',
-        points: active.filter((p) => p.avgWatts > 0).map((p) => ({ x: p.periodStart, y: p.avgWatts })),
-        color: t.watts,
-        format: (v) => `${v.toFixed(0)} W`,
-      },
-    ];
+    return [{ key: 'pace', label: 'Avg pace', points: active.map((p) => ({ x: p.periodStart, y: p.avgPaceMsPer500 })), color: t.pace, format: fmtPace }];
   }, [points, t, fmtPace]);
 
   const eventsWithData = useMemo(() => STANDARD_EVENTS.filter((e) => progression(all, e).length > 0), [all]);
@@ -157,12 +148,11 @@ export default function TrendsScreen() {
             <BarChart bars={timeBars} format={(v) => v.toFixed(0)} />
           </Card>
           <Card>
-            <SectionTitle>Average pace & watts</SectionTitle>
+            <SectionTitle>Average pace</SectionTitle>
             {perfSeries[0].points.length > 1 ? (
               <LineChart
                 series={perfSeries}
                 left={{ invert: true, format: paceTick }}
-                right={{ format: (v) => v.toFixed(0) }}
                 xFormat={(x) => formatShortDate(x, period)}
                 height={180}
               />

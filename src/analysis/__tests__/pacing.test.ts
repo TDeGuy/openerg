@@ -84,6 +84,12 @@ describe('analyzePacing — metrics', () => {
     expect(a.insights.some((i) => /plan/i.test(i.title))).toBe(true);
     expect(analyzePacing(makeRecord({ paceAt: () => 110000 })).segments[0].deltaVsPlanMs).toBeNull();
   });
+  it('cuts into the requested number of equal parts', () => {
+    const a = analyzePacing(makeRecord({ paceAt: () => 110000 }), 4);
+    expect(a.segments).toHaveLength(4);
+    expect(a.segments[3].endM).toBeCloseTo(2000, 6);
+    expect(a.segments[0].deltaVsAvgMs).toBe(0);
+  });
   it('uses PM splits when present (no strokes)', () => {
     const a = analyzePacing(makeRecord({ paceAt: profiles[2][1], splitM: 500, withStrokes: false }));
     expect(a.segments).toHaveLength(4);
